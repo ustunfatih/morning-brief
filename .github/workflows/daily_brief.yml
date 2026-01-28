@@ -1,0 +1,38 @@
+name: Generate Morning Brief
+on:
+  schedule:
+    # 04:00 UTC is 07:00 Qatar Time (Standard Time)
+    - cron: '0 4 * * *'
+  workflow_dispatch: # Allows you to click a button to run it manually
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install google-generativeai pytz
+
+      - name: Run Generator
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python morning_brief_engine.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name 'Morning Brief Bot'
+          git config --global user.email 'bot@noreply.github.com'
+          git add index.html
+          git commit -m "Daily Brief Update: $(date)" || exit 0
+          git push
