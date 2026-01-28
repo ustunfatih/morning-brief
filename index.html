@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Morning Brief | Fatih</title>
+    <style>
+        :root {
+            --bg-body: #050505; --bg-card: #141414; --bg-card-highlight: #1F1F1F;
+            --text-main: #E0E0E0; --text-muted: #A0A0A0;
+            --accent-primary: #FFD700; --accent-secondary: #87CEEB;
+            --accent-danger: #FF6B6B; --accent-success: #4ECDC4;
+            --border-radius: 16px;
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: var(--font-stack); margin: 0; padding: 0; line-height: 1.5; font-size: 16px; overflow-x: hidden; min-height: 100vh; }
+        .container { max-width: 480px; margin: 0 auto; padding: 0 0 40px 0; }
+        .header-graphic { width: 100%; height: 180px; background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-bottom: 1px solid #333; }
+        .header-content { position: absolute; bottom: 20px; left: 20px; z-index: 2; }
+        .date-badge { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; color: var(--accent-primary); font-weight: 600; display: inline-block; margin-bottom: 5px; }
+        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+        .toc-scroller { position: sticky; top: 0; background: rgba(5, 5, 5, 0.95); backdrop-filter: blur(10px); z-index: 100; padding: 10px 0; white-space: nowrap; overflow-x: auto; border-bottom: 1px solid #222; display: flex; gap: 10px; padding-left: 15px; scrollbar-width: none; }
+        .toc-scroller::-webkit-scrollbar { display: none; }
+        .toc-link { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 6px 12px; border-radius: 20px; background: var(--bg-card); transition: all 0.2s; border: 1px solid #333; }
+        .toc-link:hover, .toc-link.active { color: var(--bg-body); background: var(--text-main); border-color: var(--text-main); }
+        .section-wrapper { padding: 20px 15px 0 15px; }
+        .card { background-color: var(--bg-card); border-radius: var(--border-radius); padding: 20px; margin-bottom: 20px; border: 1px solid #222; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .card-title { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .tag { font-size: 0.7rem; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; font-weight: 700; letter-spacing: 0.5px; }
+        .tag-blue { background: rgba(135, 206, 235, 0.15); color: var(--accent-secondary); }
+        .tag-gold { background: rgba(255, 215, 0, 0.15); color: var(--accent-primary); }
+        .tag-red { background: rgba(255, 107, 107, 0.15); color: var(--accent-danger); }
+        .tag-green { background: rgba(78, 205, 196, 0.15); color: var(--accent-success); }
+        p { margin-bottom: 12px; font-size: 0.95rem; color: #ccc; }
+        p:last-child { margin-bottom: 0; }
+        ul.bullet-list { list-style: none; padding: 0; margin: 0; }
+        ul.bullet-list li { position: relative; padding-left: 20px; margin-bottom: 10px; font-size: 0.95rem; color: #d0d0d0; }
+        ul.bullet-list li::before { content: "•"; position: absolute; left: 0; color: var(--accent-secondary); font-weight: bold; }
+        .visual-mood { height: 60px; border-radius: 12px; background: linear-gradient(90deg, #2c3e50 0%, #3498db 50%, #f1c40f 100%); margin-bottom: 15px; position: relative; }
+        .visual-mood::after { content: "Günlük Enerji Akışı"; position: absolute; right: 10px; bottom: 5px; font-size: 0.7rem; color: rgba(255,255,255,0.7); }
+        .decision-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .decision-box { background: var(--bg-card-highlight); padding: 10px 5px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .d-icon { font-size: 1.2rem; margin-bottom: 4px; }
+        .d-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
+        .d-val { font-size: 0.8rem; font-weight: 700; margin-top: 2px; }
+        .d-good { color: var(--accent-success); }
+        .d-bad { color: var(--accent-danger); }
+        .d-neutral { color: var(--text-muted); }
+        .ticker-pill { display: inline-block; background: #2A2A2A; border: 1px solid #444; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; color: var(--accent-primary); margin-right: 4px; }
+        .footer { text-align: center; padding: 30px 20px; font-size: 0.8rem; color: #555; border-top: 1px solid #222; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <header class="header-graphic">
+        <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.3;" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <circle cx="20" cy="80" r="30" fill="#87CEEB" />
+            <circle cx="80" cy="20" r="40" fill="#FFD700" />
+            <path d="M0,50 Q50,0 100,50 T200,50" stroke="#4ECDC4" stroke-width="0.5" fill="none" />
+        </svg>
+        <div class="header-content">
+            <div class="date-badge">📅 28 Ocak 2026, Çarşamba</div>
+            <h1>Günaydın, Fatih.</h1>
+            <div style="font-size: 0.9rem; color: #aaa; margin-top:4px;">📍 Doha, Katar</div>
+        </div>
+    </header>
+    <nav class="toc-scroller">
+        <a href="#odak" class="toc-link">Odak</a>
+        <a href="#karar" class="toc-link">Karar</a>
+        <a href="#is" class="toc-link">İş</a>
+        <a href="#finans" class="toc-link">Finans</a>
+        <a href="#astro" class="toc-link">Astro</a>
+    </nav>
+    <div class="container">
+        <!-- AI GENERATED CONTENT INJECTED HERE -->
+        <div class="section-wrapper" id="odak-capasi">
+    <h2>🎯 Odak Çapası: Fırsatları Yakala!</h2>
+    <p>Bugün, yükselen Aslan ve Güneş İkizler enerjileriyle iletişim, yaratıcılık ve liderlik becerilerinizi ön plana çıkarın. Kendinize güvenin ve risk almaktan çekinmeyin. 🌟</p>
+</div>
+
+<div class="section-wrapper" id="dun-bugun">
+    <h2>🤔 Dün -> Bugün: Ruh Halin</h2>
+    <p>Dün Ay Terazi'deyken ilişkilerde denge arayışındaydın. Bugün ise o dengeyi koruyarak daha kararlı ve odaklı olabilirsin. Duygusal zekanı kullanarak çevrendekileri etkilemeye devam et. ⚖️➡️🦁</p>
+</div>
+
+<div class="section-wrapper" id="horoskop">
+    <h2>♌️ Horoskop: Yükselen Aslan & Güneş İkizler</h2>
+    <p>Sevgili Fatih, yükselen Aslan burcun bugünlerde özellikle kariyer alanında parlamanı sağlıyor. Güneş İkizler enerjin ise iletişim becerilerinle insanları etkilemeni kolaylaştıracak. Merkür'ün Kova burcundaki transit geçişi, ortaklıklar ve işbirlikleri için yeni fırsatlar sunabilir. Ancak, Satürn'ün Balık burcundaki etkisi, bazı konularda sabırlı olmanı gerektirebilir. Büyük adımlar atmadan önce dikkatli bir planlama yap. 📝✨</p>
+    <p><strong>Aşk:</strong> Venüs'ün Koç burcundaki konumu, ilişkilerinde tutkuyu ve heyecanı artırabilir. Bekarsan, yeni bir ilişkiye başlama potansiyelin yüksek. 💖</p>
+    <p><strong>Kariyer:</strong> Mars'ın Boğa burcundaki transiti, finansal konularda daha dikkatli olmanı gerektiriyor. Harcamalarını kontrol altında tutmaya çalış. 💼💰</p>
+</div>
+
+<div class="section-wrapper" id="karar-zaman-haritasi">
+    <h2>📅 Karar Zaman Haritası</h2>
+    <p>Bugünün enerjilerini en iyi şekilde değerlendirmek için aşağıdaki tabloya göz at:</p>
+    <div class="decision-grid">
+        <div><strong>Saat</strong></div>
+        <div><strong>Aktivite</strong></div>
+        <div><strong>Öneri</strong></div>
+        <div>09:00 - 11:00</div>
+        <div>Toplantılar & Sunumlar</div>
+        <div>İletişim becerilerini kullanarak etkileyici bir sunum yap. 👍</div>
+        <div>11:00 - 13:00</div>
+        <div>Yaratıcı Çalışmalar</div>
+        <div>Yeni fikirler üretmek için harika bir zaman. 💡</div>
+        <div>14:00 - 16:00</div>
+        <div>Finansal Planlama</div>
+        <div>Portföyünü gözden geçir ve geleceğe yönelik adımlar at. 📈</div>
+        <div>16:00 - 18:00</div>
+        <div>Sosyal Etkinlikler</div>
+        <div>Yeni insanlarla tanış ve network'ünü genişlet. 🤝</div>
+    </div>
+</div>
+
+<div class="section-wrapper" id="is-kariyer">
+    <h2>💼 İş & Kariyer</h2>
+    <p>Bugün liderlik özelliklerini sergilemek için mükemmel bir gün. Projelerinde öncü rolü üstlen ve ekibini motive et. Yeni iş fırsatları karşına çıkabilir, değerlendirmeye açık ol. 🌟</p>
+</div>
+
+<div class="section-wrapper" id="para-finans">
+    <h2>💰 Para & Finans</h2>
+    <p>Finansal kararlar alırken dikkatli olman gereken bir dönemdesin. İşte portföyün için öneriler:</p>
+    <ul>
+        <li><strong>QQQI:</strong> Teknolojideki yükseliş devam ediyor, <strong>TUT</strong>. 🚀</li>
+        <li><strong>FDVV:</strong> Değerli hisse senetleri uzun vadede kazandırır, <strong>EKLE</strong>. ➕</li>
+        <li><strong>SCHD:</strong> Temettü getirisi istikrarlı, <strong>TUT</strong>. 🏦</li>
+        <li><strong>SCHG:</strong> Büyüme potansiyeli yüksek, <strong>BEKLE</strong>. 🤔</li>
+        <li><strong>IAUI:</strong> Altın güvenli liman, <strong>EKLE</strong>. 🌟</li>
+        <li><strong>SLV:</strong> Gümüş de portföyde çeşitlilik sağlar, <strong>BEKLE</strong>. 🤔</li>
+    </ul>
+    <p><strong>YMAG ve TQQQ'dan uzak durmaya devam et! ⚠️ Yüksek riskli yatırımlardan kaçın.</strong></p>
+</div>
+
+<div class="section-wrapper" id="iliskiler">
+    <h2>❤️ İlişkiler</h2>
+    <p>İletişim becerilerin sayesinde ilişkilerinde olumlu bir hava yaratabilirsin. Partnerinle açık ve dürüst iletişim kurarak sorunları çözebilirsin. Bekarsan, yeni insanlarla tanışmak için harika bir gün. Ancak aceleci davranmamaya özen göster. 🗣️💕</p>
+</div>
+
+<div class="section-wrapper" id="tek-soru">
+    <h2>❓ Tek Soru</h2>
+    <p>Bugün kendine sorman gereken tek soru: "Bugün hangi adımı atarak hedeflerime bir adım daha yaklaşabilirim?" Cevabını bul ve harekete geç! 💪</p>
+</div>
+        
+        <div class="footer">
+            <p>Okuma süresi: ~2-3 dk</p>
+            <p style="opacity: 0.5;">Generated automatically for Fatih</p>
+        </div>
+    </div>
+</body>
+</html>
