@@ -18,13 +18,14 @@ EMAIL_PASS = os.environ.get("EMAIL_PASS")
 EMAIL_TO = os.environ.get("EMAIL_TO")
 
 # --- THE HTML TEMPLATE ---
+# En tepeye "Last Updated" bilgisi eklendi.
 HTML_TEMPLATE = Template("""
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- FORCE NO CACHE -->
+    <!-- CACHE BUSTING TAGS -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -46,10 +47,26 @@ HTML_TEMPLATE = Template("""
         p { color: #ccc; line-height: 1.5; }
         .d-good { color: #4ECDC4; font-weight: bold; }
         .d-bad { color: #FF6B6B; font-weight: bold; }
+        
+        /* Debug Banner */
+        .status-bar {
+            font-size: 10px; 
+            color: #555; 
+            text-align: right; 
+            margin-bottom: 10px; 
+            font-family: monospace;
+            border-bottom: 1px solid #222;
+            padding-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Visible Status Check -->
+        <div class="status-bar">
+            SON GÜNCELLEME: $gen_time (Qatar)
+        </div>
+
         <div style="text-align:center; padding-bottom: 20px; border-bottom: 1px solid #333;">
             <div style="font-size: 14px; color: #FFD700; font-weight: bold;">📅 $date_string</div>
             <h1>Günaydın, Fatih.</h1>
@@ -59,7 +76,6 @@ HTML_TEMPLATE = Template("""
         $content_body
         
         <div style="text-align: center; margin-top: 30px; font-size: 11px; color: #555;">
-            Generated: $gen_time (Qatar Time)<br>
             Sent from your GitHub Robot 🤖
         </div>
     </div>
