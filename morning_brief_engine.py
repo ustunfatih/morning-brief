@@ -31,12 +31,15 @@ HTML_TEMPLATE = Template("""
     <title>Morning Brief | Fatih</title>
     <style>
         :root {
-            --bg-body: #050505; --bg-card: #141414; --bg-card-highlight: #1F1F1F;
-            --text-main: #E0E0E0; --text-muted: #A0A0A0;
-            --accent-primary: #FFD700; --accent-secondary: #87CEEB;
-            --accent-danger: #FF6B6B; --accent-success: #4ECDC4;
+            --bg-body: #FDF6EC; --bg-card: #FFFFFF; --bg-card-highlight: #FFF8F0;
+            --text-main: #3D3D3D; --text-muted: #7A7A7A;
+            --accent-primary: #E8A87C; --accent-secondary: #A8D8EA;
+            --accent-danger: #F3A6A6; --accent-success: #A8E6CF;
+            --accent-lavender: #C3B1E1;
             --border-radius: 16px;
             --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --shadow-card: 0 2px 12px rgba(0,0,0,0.06);
+            --border-light: #E8DFD4;
         }
 
         /* Reset & Base */
@@ -66,22 +69,22 @@ HTML_TEMPLATE = Template("""
             display: flex;
             justify-content: center;
         }
-        
+
         .header-graphic {
             width: 100%;
             max-width: 480px; /* Limits width on desktop */
             height: 180px;
-            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+            background: linear-gradient(135deg, #FFF1E6 0%, #E8F4FD 50%, #F3E8FF 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             overflow: hidden;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--border-light);
             /* Mobile-app look on desktop */
             border-radius: 0 0 24px 24px;
         }
-        
+
         .header-content {
             position: absolute;
             bottom: 20px;
@@ -89,29 +92,29 @@ HTML_TEMPLATE = Template("""
             z-index: 2;
         }
         .date-badge {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(232, 168, 124, 0.15);
             backdrop-filter: blur(10px);
             padding: 4px 10px;
             border-radius: 8px;
             font-size: 0.8rem;
-            color: var(--accent-primary);
+            color: #C07A50;
             font-weight: 600;
             display: inline-block;
             margin-bottom: 5px;
         }
-        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; color: #3D3D3D; }
         
         /* Navigation (TOC) */
         .toc-scroller {
             position: sticky;
             top: 0;
-            background: rgba(5, 5, 5, 0.95);
+            background: rgba(253, 246, 236, 0.95);
             backdrop-filter: blur(10px);
             z-index: 100;
             padding: 10px 0;
             white-space: nowrap;
             overflow-x: auto;
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid var(--border-light);
             display: flex;
             gap: 10px;
             justify-content: center; /* Center links on desktop */
@@ -127,12 +130,12 @@ HTML_TEMPLATE = Template("""
             border-radius: 20px;
             background: var(--bg-card);
             transition: all 0.2s;
-            border: 1px solid #333;
+            border: 1px solid var(--border-light);
         }
         .toc-link:hover, .toc-link.active {
-            color: var(--bg-body);
-            background: var(--text-main);
-            border-color: var(--text-main);
+            color: #FFFFFF;
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
         }
 
         /* Sections */
@@ -144,8 +147,8 @@ HTML_TEMPLATE = Template("""
             border-radius: var(--border-radius);
             padding: 20px;
             margin-bottom: 20px;
-            border: 1px solid #222;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-card);
         }
         .card-header {
             display: flex;
@@ -168,13 +171,14 @@ HTML_TEMPLATE = Template("""
             font-weight: 700;
             letter-spacing: 0.5px;
         }
-        .tag-blue { background: rgba(135, 206, 235, 0.15); color: var(--accent-secondary); }
-        .tag-gold { background: rgba(255, 215, 0, 0.15); color: var(--accent-primary); }
-        .tag-red { background: rgba(255, 107, 107, 0.15); color: var(--accent-danger); }
-        .tag-green { background: rgba(78, 205, 196, 0.15); color: var(--accent-success); }
+        .tag-blue { background: rgba(168, 216, 234, 0.25); color: #5B9BB5; }
+        .tag-gold { background: rgba(232, 168, 124, 0.2); color: #C07A50; }
+        .tag-red { background: rgba(243, 166, 166, 0.25); color: #C07070; }
+        .tag-green { background: rgba(168, 230, 207, 0.3); color: #5DAE8B; }
+        .tag-lavender { background: rgba(195, 177, 225, 0.25); color: #8B72B2; }
 
         /* Typography & Lists */
-        p { margin-bottom: 12px; font-size: 0.95rem; color: #ccc; }
+        p { margin-bottom: 12px; font-size: 0.95rem; color: #555; }
         p:last-child { margin-bottom: 0; }
         ul.bullet-list { list-style: none; padding: 0; margin: 0; }
         ul.bullet-list li {
@@ -182,7 +186,7 @@ HTML_TEMPLATE = Template("""
             padding-left: 20px;
             margin-bottom: 10px;
             font-size: 0.95rem;
-            color: #d0d0d0;
+            color: #4A4A4A;
         }
         ul.bullet-list li::before {
             content: "•";
@@ -196,7 +200,7 @@ HTML_TEMPLATE = Template("""
         .visual-mood {
             height: 60px;
             border-radius: 12px;
-            background: linear-gradient(90deg, #2c3e50 0%, #3498db 50%, #f1c40f 100%);
+            background: linear-gradient(90deg, var(--accent-lavender) 0%, var(--accent-secondary) 50%, var(--accent-primary) 100%);
             margin-bottom: 15px;
             position: relative;
         }
@@ -217,6 +221,7 @@ HTML_TEMPLATE = Template("""
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            border: 1px solid var(--border-light);
         }
         .d-icon { font-size: 1.2rem; margin-bottom: 4px; }
         .d-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
@@ -228,13 +233,13 @@ HTML_TEMPLATE = Template("""
         /* Finance Pill */
         .ticker-pill {
             display: inline-block;
-            background: #2A2A2A;
-            border: 1px solid #444;
+            background: rgba(232, 168, 124, 0.12);
+            border: 1px solid rgba(232, 168, 124, 0.3);
             padding: 2px 8px;
             border-radius: 4px;
             font-family: monospace;
             font-size: 0.85rem;
-            color: var(--accent-primary);
+            color: #C07A50;
             margin-right: 4px;
         }
 
@@ -243,19 +248,19 @@ HTML_TEMPLATE = Template("""
             text-align: center;
             padding: 30px 20px;
             font-size: 0.8rem;
-            color: #555;
-            border-top: 1px solid #222;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-light);
             margin-top: 20px;
         }
-        
+
         .status-bar {
-            background: #111;
-            color: #666;
+            background: #F5EDE3;
+            color: #9A8E82;
             font-size: 10px;
             text-align: right;
             padding: 5px 10px;
             font-family: monospace;
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid var(--border-light);
         }
     </style>
 </head>
@@ -265,15 +270,16 @@ HTML_TEMPLATE = Template("""
     <!-- Header Wrapper to Center on Desktop -->
     <div class="header-wrapper">
         <header class="header-graphic">
-            <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.3;" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
-                <circle cx="20" cy="80" r="30" fill="#87CEEB" />
-                <circle cx="80" cy="20" r="40" fill="#FFD700" />
-                <path d="M0,50 Q50,0 100,50 T200,50" stroke="#4ECDC4" stroke-width="0.5" fill="none" />
+            <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.35;" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+                <circle cx="20" cy="80" r="30" fill="#A8D8EA" />
+                <circle cx="80" cy="20" r="40" fill="#E8A87C" />
+                <circle cx="60" cy="70" r="20" fill="#C3B1E1" />
+                <path d="M0,50 Q50,0 100,50 T200,50" stroke="#A8E6CF" stroke-width="0.5" fill="none" />
             </svg>
             <div class="header-content">
                 <div class="date-badge">📅 $date_string</div>
                 <h1>Günaydın, Fatih.</h1>
-                <div style="font-size: 0.9rem; color: #aaa; margin-top:4px;">📍 Doha, Katar</div>
+                <div style="font-size: 0.9rem; color: #7A7A7A; margin-top:4px;">📍 Doha, Katar</div>
             </div>
         </header>
     </div>
@@ -397,7 +403,7 @@ def generate_daily_brief():
     3. HOROSKOP (ID: astro):
        - Aslan Yükselen ve Kova/İkizler transitlerine odaklan.
        - <span class="tag tag-blue"> gibi renkli etiketler kullan.
-       - "Astro-Bilişsel Uyarı" başlığı altında bir <div class="card" style="background: #1a1515;"> ekle.
+       - "Astro-Bilişsel Uyarı" başlığı altında bir <div class="card" style="background: #EDE7F6;"> ekle.
     
     4. KARAR ZAMAN HARİTASI (ID: karar):
        - MUTLAKA şu grid yapısını kullan:
@@ -422,7 +428,8 @@ def generate_daily_brief():
     ÖNEMLİ KURALLAR:
     - Asla ```html``` bloğu koyma, sadece saf HTML kodu döndür.
     - Asla <html>, <head>, <body> taglerini açma.
-    - Dark mode uyumlu ol (zaten CSS hallediyor, sen class'ları doğru kullan).
+    - Light mode (krem/pastel tonlar) uyumlu ol. Arka plan açık renk, yazılar koyu. CSS class'ları doğru kullan.
+    - Renkli etiketler için tag-blue, tag-gold, tag-red, tag-green, tag-lavender class'larını kullan.
     """
 
     model = genai.GenerativeModel('gemini-2.0-flash')
