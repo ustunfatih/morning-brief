@@ -17,7 +17,7 @@ EMAIL_USER = os.environ.get("EMAIL_USER")
 EMAIL_PASS = os.environ.get("EMAIL_PASS")
 EMAIL_TO = os.environ.get("EMAIL_TO")
 
-# --- THE HTML TEMPLATE (PREMIUM RESTORED) ---
+# --- THE HTML TEMPLATE (RESPONSIVE HEADER FIXED) ---
 HTML_TEMPLATE = Template("""
 <!DOCTYPE html>
 <html lang="tr">
@@ -59,9 +59,17 @@ HTML_TEMPLATE = Template("""
             padding: 0 0 40px 0;
         }
 
-        /* Header Graphic */
+        /* Header Graphic - FIXED RESPONSIVE */
+        .header-wrapper {
+            background-color: var(--bg-body); /* Fill sides on desktop */
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        
         .header-graphic {
             width: 100%;
+            max-width: 480px; /* Limits width on desktop */
             height: 180px;
             background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
             display: flex;
@@ -70,7 +78,10 @@ HTML_TEMPLATE = Template("""
             position: relative;
             overflow: hidden;
             border-bottom: 1px solid #333;
+            /* Mobile-app look on desktop */
+            border-radius: 0 0 24px 24px;
         }
+        
         .header-content {
             position: absolute;
             bottom: 20px;
@@ -103,7 +114,7 @@ HTML_TEMPLATE = Template("""
             border-bottom: 1px solid #222;
             display: flex;
             gap: 10px;
-            padding-left: 15px;
+            justify-content: center; /* Center links on desktop */
             scrollbar-width: none;
         }
         .toc-scroller::-webkit-scrollbar { display: none; }
@@ -251,19 +262,21 @@ HTML_TEMPLATE = Template("""
 <body>
     <div class="status-bar">SON GÜNCELLEME: $gen_time (Qatar)</div>
 
-    <!-- Header -->
-    <header class="header-graphic">
-        <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.3;" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <circle cx="20" cy="80" r="30" fill="#87CEEB" />
-            <circle cx="80" cy="20" r="40" fill="#FFD700" />
-            <path d="M0,50 Q50,0 100,50 T200,50" stroke="#4ECDC4" stroke-width="0.5" fill="none" />
-        </svg>
-        <div class="header-content">
-            <div class="date-badge">📅 $date_string</div>
-            <h1>Günaydın, Fatih.</h1>
-            <div style="font-size: 0.9rem; color: #aaa; margin-top:4px;">📍 Doha, Katar</div>
-        </div>
-    </header>
+    <!-- Header Wrapper to Center on Desktop -->
+    <div class="header-wrapper">
+        <header class="header-graphic">
+            <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.3;" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+                <circle cx="20" cy="80" r="30" fill="#87CEEB" />
+                <circle cx="80" cy="20" r="40" fill="#FFD700" />
+                <path d="M0,50 Q50,0 100,50 T200,50" stroke="#4ECDC4" stroke-width="0.5" fill="none" />
+            </svg>
+            <div class="header-content">
+                <div class="date-badge">📅 $date_string</div>
+                <h1>Günaydın, Fatih.</h1>
+                <div style="font-size: 0.9rem; color: #aaa; margin-top:4px;">📍 Doha, Katar</div>
+            </div>
+        </header>
+    </div>
 
     <!-- Navigation -->
     <nav class="toc-scroller">
@@ -298,27 +311,46 @@ def format_date_str(now):
     return f"{now.day} {months[now.month]} {now.year}, {days[now.weekday()]}"
 
 def send_email(html_content, date_str):
-    if not EMAIL_USER or not EMAIL_PASS or not EMAIL_TO:
-        print("Skipping email: Credentials not found.")
+    print("--- 📧 E-POSTA GÖNDERİM SÜRECİ BAŞLADI ---")
+    
+    # Debug Checks
+    if not EMAIL_USER:
+        print("❌ HATA: 'EMAIL_USER' secret tanımlı değil!")
         return
+    if not EMAIL_PASS:
+        print("❌ HATA: 'EMAIL_PASS' secret tanımlı değil!")
+        return
+    if not EMAIL_TO:
+        print("❌ HATA: 'EMAIL_TO' secret tanımlı değil!")
+        return
+
+    print(f"✅ Kimlik bilgileri bulundu. Gönderen: {EMAIL_USER} -> Alıcı: {EMAIL_TO}")
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"Morning Brief: {date_str}"
     msg["From"] = EMAIL_USER
     msg["To"] = EMAIL_TO
 
-    # We send the rich HTML. Email clients may strip some CSS, but the content will be full.
+    # We send the rich HTML
     part = MIMEText(html_content, "html")
     msg.attach(part)
 
     try:
+        print("🔌 Gmail SMTP sunucusuna (smtp.gmail.com:465) bağlanılıyor...")
         server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+        
+        print("🔐 Giriş yapılıyor...")
         server.login(EMAIL_USER, EMAIL_PASS)
+        
+        print("📨 Mesaj gönderiliyor...")
         server.sendmail(EMAIL_USER, EMAIL_TO, msg.as_string())
+        
         server.quit()
-        print("Email sent successfully!")
+        print("✅ BAŞARILI: E-posta başarıyla gönderildi!")
+    except smtplib.SMTPAuthenticationError:
+        print("❌ HATA: Kullanıcı adı veya şifre yanlış! (App Password kullandığından emin misin?)")
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        print(f"❌ BEKLENMEYEN HATA: {str(e)}")
 
 def generate_daily_brief():
     if not API_KEY:
