@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- FORCE NO CACHE -->
+    <!-- CACHE BUSTING TAGS -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -26,10 +26,26 @@
         p { color: #ccc; line-height: 1.5; }
         .d-good { color: #4ECDC4; font-weight: bold; }
         .d-bad { color: #FF6B6B; font-weight: bold; }
+        
+        /* Debug Banner */
+        .status-bar {
+            font-size: 10px; 
+            color: #555; 
+            text-align: right; 
+            margin-bottom: 10px; 
+            font-family: monospace;
+            border-bottom: 1px solid #222;
+            padding-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Visible Status Check -->
+        <div class="status-bar">
+            SON GÜNCELLEME: 08:55:43 (Qatar)
+        </div>
+
         <div style="text-align:center; padding-bottom: 20px; border-bottom: 1px solid #333;">
             <div style="font-size: 14px; color: #FFD700; font-weight: bold;">📅 29 Ocak 2026, Perşembe</div>
             <h1>Günaydın, Fatih.</h1>
@@ -37,42 +53,41 @@
         
         <!-- AI GENERATED CONTENT -->
         <div class="card">
-    <h2>Odak</h2>
-    <p>Denge, İletişim, Fırsatlar.</p>
+    <h2>1. Odak</h2>
+    <p>Denge & Fırsat</p>
 </div>
 
 <div class="card">
-    <h2>Dün -> Bugün</h2>
-    <p>Dün, kişisel ifade ve yaratıcılığınız ön plandaydı. Bugün ise, iletişim becerileriniz ve finansal fırsatlara odaklanmanız gerekiyor. Denge arayışınız bugün daha belirgin hale gelecek.</p>
+    <h2>2. Dün -> Bugün</h2>
+    <p>Dün, duygusal dengesizlikler ve kararsızlıklar ön plandaydı. Bugün, iletişim becerilerinizi kullanarak yeni fırsatlar yakalayabilirsiniz. Daha sakin ve objektif bir yaklaşımla finansal kararlar almanız gerekiyor.</p>
 </div>
 
 <div class="card">
-    <h2>Horoskop</h2>
-    <p><b>Aslan Yükselen:</b> Bugün, ortaklıklarınız ve yakın ilişkileriniz mercek altında olacak. Karşınızdaki kişilerin ihtiyaçlarını anlamaya çalışın ve diplomatik yaklaşımlar sergileyin. Beklenmedik işbirlikleri gündeme gelebilir. Kendinizi gösterme isteğiniz yüksek olsa da, başkalarının görüşlerini de dikkate almanız önemli.</p>
-    <p><b>İkizler Güneş:</b> Zihniniz oldukça aktif ve yeni bilgiler edinmeye açık. Kısa seyahatler, eğitimler veya seminerler size ilham verebilir. İletişim ağınızı genişletmek için harika bir gün. Belirsizlikler sizi tedirgin etse de, farklı olasılıkları değerlendirmek size yeni kapılar açabilir.</p>
+    <h2>3. Horoskop</h2>
+    <p><b>Aslan Yükselen:</b> Bugün sosyal çevrenizdeki hareketlilik artıyor. Yeni insanlarla tanışabilir, mevcut ilişkilerinizi güçlendirebilirsiniz. Özellikle iş ortaklıkları ve projeler açısından olumlu gelişmeler söz konusu. Kendinizi daha enerjik ve motive hissedeceksiniz. Ancak harcamalarınız konusunda dikkatli olmanız gerekiyor.</p>
+    <p><b>İkizler Güneş:</b> Zihinsel olarak aktif ve meraklısınız. Yeni bilgiler öğrenmek, iletişim kurmak ve seyahat etmek size iyi gelecek. Ancak kararsızlık ve dağınıklık sorunlarına karşı dikkatli olmalısınız. Bir konuya odaklanmakta zorlanabilirsiniz. Daha planlı ve organize olmaya çalışın.</p>
 </div>
 
 <div class="card">
-    <h2>İş & Kariyer</h2>
-    <p>Bugün, iş hayatınızda iletişim becerileriniz ön plana çıkacak. Müzakereler ve toplantılar için uygun bir gün. Yaratıcılığınızı kullanarak projelerinize farklı bir bakış açısı getirebilirsiniz. Ekip çalışmasına önem verin ve iş arkadaşlarınızla uyumlu bir iletişim kurmaya çalışın. Yeni fikirler üretmek ve bunları sunmak için cesur olun.</p>
+    <h2>4. İş & Kariyer</h2>
+    <p>Yaratıcılığınızı ve liderlik yeteneklerinizi sergileyebileceğiniz bir gün. Sunumlar yapmak, toplantılara katılmak ve yeni projeler başlatmak için uygun bir zaman. İş arkadaşlarınızla iletişiminiz güçlü olacak ve destek göreceksiniz. Ancak otorite figürleriyle olası gerginliklere karşı dikkatli olun. Hedeflerinize odaklanın ve sabırlı olun.</p>
 </div>
 
 <div class="card">
-    <h2>Finans</h2>
-    <p>Bugün, finansal kararlarınızı rasyonel bir şekilde değerlendirmeye çalışın. Risk almaktan kaçının ve uzun vadeli yatırımlara odaklanın. Piyasadaki dalgalanmalar sizi endişelendirebilir, ancak panik yapmaktan kaçının.</p>
+    <h2>5. Finans</h2>
+    <p>Finansal konularda risk almaktan kaçınmanız gereken bir gün. Duygusal kararlar vermek yerine, mantıklı ve analizlere dayalı bir yaklaşım sergileyin. Mevcut yatırımlarınızı gözden geçirin ve uzun vadeli hedeflerinize odaklanın. Küçük kayıplara karşı panik yapmayın. </p>
     <ul>
         <li><b>QQQI:</b> TUT</li>
         <li><b>FDVV:</b> TUT</li>
-        <li><b>SCHD:</b> EKLE</li>
+        <li><b>SCHD:</b> EKLE (küçük miktar)</li>
         <li><b>SCHG:</b> TUT</li>
-        <li><b>IAUI:</b> EKLE</li>
+        <li><b>IAUI:</b> TUT</li>
         <li><b>SLV:</b> TUT</li>
     </ul>
-    <p><b>Not:</b> Bu finansal tavsiyeler genel bilgilendirme amaçlıdır ve kişisel yatırım danışmanlığı yerine geçmez. Yatırım kararlarınızı almadan önce lütfen bir finans uzmanına danışın.</p>
+    <p><b>Uyarı:</b> Yatırım tavsiyesi değildir. Kendi araştırmanızı yapın.</p>
 </div>
         
         <div style="text-align: center; margin-top: 30px; font-size: 11px; color: #555;">
-            Generated: 08:53:02 (Qatar Time)<br>
             Sent from your GitHub Robot 🤖
         </div>
     </div>
