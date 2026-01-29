@@ -80,8 +80,12 @@ HTML_TEMPLATE = Template("""
             --accent-lavender: #C3B1E1;
             --border-radius: 16px;
             --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --shadow-card: 0 2px 12px rgba(0,0,0,0.06);
-            --border-light: #E8DFD4;
+            --shadow-card: 0 6px 18px rgba(31, 25, 10, 0.08);
+            --border-light: #EDE3D7;
+            --text-base: 0.95rem;
+            --text-small: 0.8rem;
+            --text-title: 1.15rem;
+            --text-hero: 1.9rem;
         }
 
         /* Reset & Base */
@@ -92,8 +96,8 @@ HTML_TEMPLATE = Template("""
             font-family: var(--font-stack);
             margin: 0;
             padding: 0;
-            line-height: 1.6;
-            font-size: 0.95rem;
+            line-height: 1.65;
+            font-size: var(--text-base);
             min-height: 100vh;
         }
 
@@ -128,22 +132,22 @@ HTML_TEMPLATE = Template("""
 
         .header-content {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
+            bottom: 18px;
+            left: 15px;
             z-index: 2;
         }
         .date-badge {
             background: rgba(232, 168, 124, 0.15);
             backdrop-filter: blur(10px);
-            padding: 4px 10px;
+            padding: 5px 10px;
             border-radius: 8px;
-            font-size: 0.8rem;
+            font-size: var(--text-small);
             color: #C07A50;
             font-weight: 600;
             display: inline-block;
             margin-bottom: 5px;
         }
-        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; color: #3D3D3D; }
+        h1 { margin: 0; font-size: var(--text-hero); font-weight: 800; letter-spacing: -0.6px; color: #3D3D3D; }
 
         /* Mood Band - thin decorative strip */
         .mood-band {
@@ -212,7 +216,7 @@ HTML_TEMPLATE = Template("""
         .card {
             background-color: var(--bg-card);
             border-radius: var(--border-radius);
-            padding: 16px;
+            padding: 18px;
             margin-bottom: 12px;
             border: 1px solid var(--border-light);
             box-shadow: var(--shadow-card);
@@ -231,29 +235,29 @@ HTML_TEMPLATE = Template("""
             gap: 8px;
         }
         .tag {
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             text-transform: uppercase;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 4px 9px;
+            border-radius: 8px;
             font-weight: 700;
             letter-spacing: 0.5px;
         }
-        .tag-blue { background: rgba(168, 216, 234, 0.25); color: #5B9BB5; }
-        .tag-gold { background: rgba(232, 168, 124, 0.2); color: #C07A50; }
-        .tag-red { background: rgba(243, 166, 166, 0.25); color: #C07070; }
-        .tag-green { background: rgba(168, 230, 207, 0.3); color: #5DAE8B; }
-        .tag-lavender { background: rgba(195, 177, 225, 0.25); color: #8B72B2; }
+        .tag-blue { background: rgba(168, 216, 234, 0.22); color: #5B9BB5; border: 1px solid rgba(168, 216, 234, 0.35); }
+        .tag-gold { background: rgba(232, 168, 124, 0.22); color: #C07A50; border: 1px solid rgba(232, 168, 124, 0.35); }
+        .tag-red { background: rgba(243, 166, 166, 0.22); color: #C07070; border: 1px solid rgba(243, 166, 166, 0.35); }
+        .tag-green { background: rgba(168, 230, 207, 0.22); color: #5DAE8B; border: 1px solid rgba(168, 230, 207, 0.35); }
+        .tag-lavender { background: rgba(195, 177, 225, 0.22); color: #8B72B2; border: 1px solid rgba(195, 177, 225, 0.35); }
 
         /* Typography & Lists */
-        p { margin-bottom: 10px; font-size: 0.95rem; color: #555; }
+        p { margin-bottom: 12px; font-size: var(--text-base); color: #555; }
         p:last-child { margin-bottom: 0; }
-        h2, h3, h4 { font-size: 1.1rem; margin: 0 0 8px 0; }
+        h2, h3, h4 { font-size: var(--text-title); margin: 0 0 8px 0; }
         ul.bullet-list { list-style: none; padding: 0; margin: 0; }
         ul.bullet-list li {
             position: relative;
             padding-left: 18px;
             margin-bottom: 8px;
-            font-size: 0.95rem;
+            font-size: var(--text-base);
             color: #4A4A4A;
         }
         ul.bullet-list li::before {
@@ -268,7 +272,7 @@ HTML_TEMPLATE = Template("""
         .weather-card {
             background: linear-gradient(135deg, #E8F4FD 0%, #F0EAFF 100%);
             border-radius: var(--border-radius);
-            padding: 16px;
+            padding: 18px;
             margin-bottom: 12px;
             border: 1px solid #D4E8F0;
             box-shadow: var(--shadow-card);
@@ -284,7 +288,7 @@ HTML_TEMPLATE = Template("""
             flex-shrink: 0;
         }
         .weather-card .weather-summary {
-            font-size: 0.85rem;
+            font-size: var(--text-base);
             color: #4A4A4A;
         }
         .weather-card .weather-summary strong {
@@ -299,14 +303,16 @@ HTML_TEMPLATE = Template("""
         .weather-period {
             background: rgba(255,255,255,0.7);
             border-radius: 10px;
-            padding: 10px 8px;
+            padding: 12px;
             text-align: center;
-            font-size: 0.85rem;
+            font-size: var(--text-base);
             color: #4A4A4A;
+            min-height: 84px;
+            line-height: 1.45;
         }
         .weather-period strong {
             display: block;
-            font-size: 0.8rem;
+            font-size: var(--text-small);
             color: var(--text-muted);
             margin-bottom: 4px;
             text-transform: uppercase;
@@ -322,7 +328,7 @@ HTML_TEMPLATE = Template("""
         }
         .decision-box {
             background: var(--bg-card-highlight);
-            padding: 10px 5px;
+            padding: 12px;
             border-radius: 10px;
             text-align: center;
             display: flex;
@@ -330,10 +336,12 @@ HTML_TEMPLATE = Template("""
             align-items: center;
             justify-content: center;
             border: 1px solid var(--border-light);
+            min-height: 84px;
+            line-height: 1.45;
         }
         .d-icon { font-size: 1.2rem; margin-bottom: 4px; }
-        .d-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
-        .d-val { font-size: 0.85rem; font-weight: 700; margin-top: 2px; }
+        .d-label { font-size: var(--text-small); color: var(--text-muted); font-weight: 600; }
+        .d-val { font-size: var(--text-base); font-weight: 700; margin-top: 2px; }
         .d-good { color: var(--accent-success); }
         .d-bad { color: var(--accent-danger); }
         .d-neutral { color: var(--text-muted); }
@@ -346,16 +354,26 @@ HTML_TEMPLATE = Template("""
             padding: 2px 8px;
             border-radius: 4px;
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: var(--text-base);
             color: #C07A50;
             margin-right: 4px;
+        }
+        ul.finance-list { list-style: none; padding: 0; margin: 0; }
+        ul.finance-list li {
+            background: rgba(255, 248, 240, 0.6);
+            border: 1px solid rgba(232, 223, 212, 0.7);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            font-size: var(--text-base);
+            color: #4A4A4A;
         }
 
         /* Footer */
         .footer {
             text-align: center;
             padding: 20px 15px;
-            font-size: 0.8rem;
+            font-size: var(--text-small);
             color: var(--text-muted);
             border-top: 1px solid var(--border-light);
             margin-top: 12px;
@@ -369,12 +387,18 @@ HTML_TEMPLATE = Template("""
         .status-bar {
             background: #F5EDE3;
             color: #9A8E82;
-            font-size: 10px;
+            font-size: 0.72rem;
             text-align: right;
             padding: 5px 10px;
             font-family: monospace;
             border-bottom: 1px solid var(--border-light);
         }
+        .source-link {
+            color: #8B72B2;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(139, 114, 178, 0.25);
+        }
+        .source-link:hover { border-bottom-color: rgba(139, 114, 178, 0.6); }
 
         /* Responsive: wider on desktop */
         @media (min-width: 768px) {
@@ -387,7 +411,7 @@ HTML_TEMPLATE = Template("""
             body { font-size: 0.92rem; }
             .weather-periods { grid-template-columns: 1fr; }
             .decision-grid { grid-template-columns: 1fr; }
-            .card { padding: 14px; }
+            .card { padding: 16px; }
         }
     </style>
 </head>
@@ -406,7 +430,7 @@ HTML_TEMPLATE = Template("""
             <div class="header-content">
                 <div class="date-badge">📅 $date_string</div>
                 <h1>Günaydın, Fatih.</h1>
-                <div style="font-size: 0.9rem; color: #7A7A7A; margin-top:4px;">📍 Doha, Katar</div>
+                <div style="font-size: var(--text-small); color: #7A7A7A; margin-top:4px;">📍 Doha, Katar</div>
             </div>
         </header>
     </div>
@@ -442,7 +466,7 @@ HTML_TEMPLATE = Template("""
         const progressBar = document.getElementById("tocProgress");
 
         const setActive = (id) => {
-            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === `#${id}`));
+            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === ("#" + id)));
         };
 
         const observer = new IntersectionObserver((entries) => {
@@ -458,7 +482,7 @@ HTML_TEMPLATE = Template("""
             const scrollTop = doc.scrollTop || document.body.scrollTop;
             const scrollHeight = doc.scrollHeight - doc.clientHeight;
             const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-            if (progressBar) progressBar.style.width = `${pct}%`;
+            if (progressBar) progressBar.style.width = pct + "%";
         };
         document.addEventListener("scroll", onScroll, { passive: true });
         onScroll();
@@ -983,9 +1007,12 @@ def generate_daily_brief():
        - Aslan Yükselen ve Kova/İkizler transitlerine odaklan.
        - Gezegen retroları varsa mutlaka belirt.
        - <span class="tag tag-blue"> gibi renkli etiketler kullan (tag-blue, tag-gold, tag-red, tag-green, tag-lavender).
+       - Bu bölüm UZUN OLSUN: en az 3-4 paragraf + kısa bir bullet list (3 madde).
+       - Paragraflar: (1) transit+natal sentez, (2) duygu/zihin/ilişki etkisi, (3) iş/finans etkisi, (4) pratik öneri.
        - "Astro-Bilişsel Uyarı" başlığı altında bir <div class="card" style="background: #EDE7F6;"> ekle.
-       - Bölümün sonuna "Günün Astroloji Kaynakları" başlığı altında yukarıdaki astrolog listesinden 2-3 astrolog seç ve
-         şu formatta link ver: <a href="URL" target="_blank" style="color: #8B72B2; text-decoration: none;">İsim</a>.
+       - Bölümün sonuna "Günün Astroloji Kaynakları" başlığı altında EN AZ 5 kaynak ver.
+         En az 3 Türk + 2 uluslararası kaynak olsun (listeden seç).
+         Şu formatı kullan: <a href="URL" target="_blank" class="source-link">İsim</a>.
          Farklı günlerde farklı astrologları öner, her gün aynılarını koyma.
          Ayrıca referans kitaplarından birini de "Okuma Önerisi" olarak ekle.
 
@@ -1010,6 +1037,7 @@ def generate_daily_brief():
        - Hisse adlarını <span class="ticker-pill">HİSSE</span> şeklinde yaz.
        - Uydurma fiyat verme, yukarıdaki Yahoo Finance verilerini kullan.
        - Bölümün hemen başında küçük bir satır ekle: "Veri zamanı: {finance_time_display} (US/Eastern) — {market_status}"
+       - Listeyi şu yapıda ver: <ul class="finance-list"> içinde <li> satırları.
 
     7. TEK SORU:
        - Günün düşündürücü sorusu (astrolojik temalarla bağlantılı olabilir).
