@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install google-generativeai pytz
+          pip install google-generativeai pytz kerykeion
 
       - name: Run Generator
         # İŞTE EKSİK OLAN KÖPRÜ BURASI 👇

@@ -6,11 +6,47 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import google.generativeai as genai
 from string import Template
+from kerykeion import AstrologicalSubjectFactory
 
 # --- CONFIGURATION ---
 API_KEY = os.environ.get("GEMINI_API_KEY")
 TIMEZONE = "Asia/Qatar"
 USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, Istanbul"
+
+# Fatih's natal chart coordinates (Istanbul, Fatih district)
+NATAL_YEAR, NATAL_MONTH, NATAL_DAY = 1989, 6, 14
+NATAL_HOUR, NATAL_MINUTE = 9, 45
+NATAL_LAT, NATAL_LNG = 41.0082, 28.9784  # Istanbul
+NATAL_TZ = "Europe/Istanbul"
+
+# Doha coordinates (current location)
+DOHA_LAT, DOHA_LNG = 25.2854, 51.5310
+DOHA_TZ = "Asia/Qatar"
+
+# --- ASTROLOGER REFERENCES ---
+ASTROLOGER_SOURCES = """
+TÜRK ASTROLOGLAR:
+- Dinçer Güner: YouTube https://www.youtube.com/channel/UCe5FpvalDw47kRWNxVVlRjQ | X/Twitter https://x.com/dincerguner | Instagram https://www.instagram.com/dincerguner/ | Web https://www.dincerguner.com/
+- Hande Kazanova: YouTube https://www.youtube.com/channel/UCKC-ZB0pXPRB44ekCT6nCzA | X/Twitter https://x.com/Hande_Kazanova | Instagram https://www.instagram.com/handekazanova/
+- Öner Döşer: YouTube https://www.youtube.com/channel/UCpr1OfHZ2tYPl3nFbwPGMsg | X/Twitter https://x.com/oner_doser | Instagram https://www.instagram.com/onerdoser/ | Web https://www.onerdoser.com/
+- Can Aydoğmuş: YouTube https://www.youtube.com/@canaydogmus | X/Twitter https://x.com/SizisevenbirCan | Instagram https://www.instagram.com/canyaziyor/ | Web https://www.canaydogmus.com.tr/
+
+ULUSLARARASI ASTROLOGLAR:
+- Chani Nicholas: X/Twitter https://x.com/chaninicholas | Instagram https://www.instagram.com/chaninicholas/ | Web/App https://www.chani.com/
+- The AstroTwins (Ophira & Tali Edut): X/Twitter https://x.com/astrotwins | Instagram https://www.instagram.com/astrotwins/ | Web https://astrostyle.com/
+- Susan Miller (Astrology Zone): X/Twitter https://x.com/astrologyzone | Instagram https://www.instagram.com/astrologyzone/ | Web https://www.astrologyzone.com/
+- Co-Star Astrology: X/Twitter https://twitter.com/costarastrology | Instagram https://www.instagram.com/costarastrology/ | Web https://www.costarastrology.com/
+"""
+
+ASTROLOGY_BOOKS = """
+REFERANS KİTAPLAR:
+- "The Only Astrology Book You'll Ever Need" - Joanna Martine Woolfolk
+- "Astrology for the Soul" - Jan Spiller (Ay Düğümleri rehberi)
+- "The Inner Sky" - Steven Forrest (Modern psikolojik astroloji)
+- "Parker's Astrology" - Julia & Derek Parker (Kapsamlı başvuru kitabı)
+- "Yükselen Burcunuzu Tanıyın" - Öner Döşer
+- "Astroloji: Kendini Bil" - Hande Kazanova
+"""
 
 # Email Config
 EMAIL_USER = os.environ.get("EMAIL_USER")
@@ -358,6 +394,99 @@ def send_email(html_content, date_str):
     except Exception as e:
         print(f"❌ BEKLENMEYEN HATA: {str(e)}")
 
+def get_planetary_data(now_qatar):
+    """Compute real planetary positions using Swiss Ephemeris via kerykeion."""
+    try:
+        # Current sky (transit chart) from Doha
+        transit = AstrologicalSubjectFactory.from_birth_data(
+            name="Güncel Gökyüzü",
+            year=now_qatar.year,
+            month=now_qatar.month,
+            day=now_qatar.day,
+            hour=now_qatar.hour,
+            minute=now_qatar.minute,
+            lng=DOHA_LNG,
+            lat=DOHA_LAT,
+            tz_str=DOHA_TZ,
+            online=False,
+        )
+
+        # Fatih's natal chart
+        natal = AstrologicalSubjectFactory.from_birth_data(
+            name="Fatih",
+            year=NATAL_YEAR,
+            month=NATAL_MONTH,
+            day=NATAL_DAY,
+            hour=NATAL_HOUR,
+            minute=NATAL_MINUTE,
+            lng=NATAL_LNG,
+            lat=NATAL_LAT,
+            tz_str=NATAL_TZ,
+            online=False,
+        )
+
+        # Zodiac sign Turkish mapping
+        sign_tr = {
+            "Ari": "Koç", "Tau": "Boğa", "Gem": "İkizler", "Can": "Yengeç",
+            "Leo": "Aslan", "Vir": "Başak", "Lib": "Terazi", "Sco": "Akrep",
+            "Sag": "Yay", "Cap": "Oğlak", "Aqu": "Kova", "Pis": "Balık",
+        }
+
+        planets = [
+            ("Güneş", transit.sun), ("Ay", transit.moon),
+            ("Merkür", transit.mercury), ("Venüs", transit.venus),
+            ("Mars", transit.mars), ("Jüpiter", transit.jupiter),
+            ("Satürn", transit.saturn), ("Uranüs", transit.uranus),
+            ("Neptün", transit.neptune), ("Plüton", transit.pluto),
+        ]
+
+        natal_planets = [
+            ("Güneş", natal.sun), ("Ay", natal.moon),
+            ("Merkür", natal.mercury), ("Venüs", natal.venus),
+            ("Mars", natal.mars), ("Jüpiter", natal.jupiter),
+            ("Satürn", natal.saturn),
+        ]
+
+        # Build transit positions text
+        lines = []
+        for name, planet in planets:
+            sign = sign_tr.get(planet.sign, planet.sign)
+            retro = " (Retrograd)" if getattr(planet, 'retrograde', False) else ""
+            lines.append(f"  {name}: {sign} {planet.position:.1f}°{retro}")
+
+        transit_text = "\n".join(lines)
+
+        # Build natal positions text
+        natal_lines = []
+        for name, planet in natal_planets:
+            sign = sign_tr.get(planet.sign, planet.sign)
+            natal_lines.append(f"  {name}: {sign} {planet.position:.1f}°")
+
+        natal_text = "\n".join(natal_lines)
+
+        # Moon phase info
+        moon_sign = sign_tr.get(transit.moon.sign, transit.moon.sign)
+        moon_deg = transit.moon.position
+
+        return f"""
+GERÇEK GEZEGENSEl VERİLER (Swiss Ephemeris - bugünkü hesaplama):
+
+GÜNCEL TRANSİT POZİSYONLARI (Doha, {now_qatar.strftime('%d.%m.%Y %H:%M')}):
+{transit_text}
+
+FATİH'İN NATAL HARİTASI (14.06.1989, 09:45, İstanbul):
+{natal_lines[0]}
+  Güneş: İkizler, Ay: Terazi, Yükselen: Aslan
+{natal_text}
+
+AY BİLGİSİ:
+  Ay şu anda {moon_sign} burcunda, {moon_deg:.1f}° konumunda.
+"""
+    except Exception as e:
+        print(f"⚠️ Ephemeris hesaplama hatası: {e}")
+        return "\n(Ephemeris verisi hesaplanamadı, genel astroloji bilgisi kullan.)\n"
+
+
 def generate_daily_brief():
     if not API_KEY:
         print("Error: GEMINI_API_KEY not found.")
@@ -372,64 +501,85 @@ def generate_daily_brief():
 
     print(f"Generating brief for: {date_str}...")
 
-    # --- RESTORED DETAILED PROMPT ---
+    # Compute real planetary positions
+    planetary_data = get_planetary_data(now_qatar)
+
+    # --- ENRICHED PROMPT WITH REAL EPHEMERIS DATA ---
     prompt = f"""
     Sen Fatih için "Morning Brief" hazırlayan, çok zeki ve biraz da esprili bir astroloji & finans asistanısın.
-    
+
     PARAMETRELER:
     - Tarih: {date_str} (Zaman dilimi: Asia/Qatar).
     - Kullanıcı: Fatih (Doğum: {USER_BIRTH_DATA}).
     - Astro Kimlik: Güneş İkizler, Ay Terazi, Yükselen Aslan.
     - Dil: Türkçe.
     - Ton: Kısa, net, bullet-point ağırlıklı. Mobil öncelikli.
-    
+
+    {planetary_data}
+
     PORTFÖY İZLEME LISTESI (Whitelist): QQQI, FDVV, SCHD, SCHG, IAUI, SLV.
     YASAKLI LISTE (Blacklist): YMAG, TQQQ, GLDW.
-    
+
+    TAKİP EDİLEN ASTROLOG KAYNAKLARI:
+    {ASTROLOGER_SOURCES}
+
+    {ASTROLOGY_BOOKS}
+
     GÖREV:
     Aşağıdaki HTML yapısına BİREBİR uyarak sadece BODY içeriğini (header/footer hariç) üret.
     Her bölümü <div class="section-wrapper" id="...">...</div> içine al.
-    
+
     İSTENEN BÖLÜMLER VE HTML YAPISI:
-    
+
     1. ODAK ÇAPASI (ID: odak):
        - <div class="card" style="border-left: 4px solid var(--accent-primary);"> kullan.
        - İçinde bir Motto ve "3 Kelime Kuralı" olsun.
-    
+
     2. DÜN -> BUGÜN & MOOD:
        - <div class="visual-mood"></div> div'ini mutlaka koy (CSS ile renkleniyor).
        - Kısa bir ruh hali geçiş analizi yap.
-    
+
     3. HOROSKOP (ID: astro):
+       - YUKARIDA VERİLEN GERÇEK GEZEGENSEl VERİLERİ KULLAN. Uydurma yapma!
+       - Güncel transit pozisyonlarını Fatih'in natal haritasıyla karşılaştır.
        - Aslan Yükselen ve Kova/İkizler transitlerine odaklan.
-       - <span class="tag tag-blue"> gibi renkli etiketler kullan.
+       - Gezegen retroları varsa mutlaka belirt.
+       - <span class="tag tag-blue"> gibi renkli etiketler kullan (tag-blue, tag-gold, tag-red, tag-green, tag-lavender).
        - "Astro-Bilişsel Uyarı" başlığı altında bir <div class="card" style="background: #EDE7F6;"> ekle.
-    
+       - Bölümün sonuna "Günün Astroloji Kaynakları" başlığı altında yukarıdaki astrolog listesinden 2-3 astrolog seç ve
+         şu formatta link ver: <a href="URL" target="_blank" style="color: #8B72B2; text-decoration: none;">İsim</a>.
+         Farklı günlerde farklı astrologları öner, her gün aynılarını koyma.
+         Ayrıca referans kitaplarından birini de "Okuma Önerisi" olarak ekle.
+
     4. KARAR ZAMAN HARİTASI (ID: karar):
+       - Gerçek transit verilerine göre karar zamanlarını belirle.
        - MUTLAKA şu grid yapısını kullan:
          <div class="decision-grid">
             <div class="decision-box">...Simge, EN İYİ, Eylem...</div>
             <div class="decision-box">...Simge, NÖTR, Eylem...</div>
             <div class="decision-box">...Simge, KAÇIN, Eylem...</div>
          </div>
-    
+
     5. İŞ & KARİYER (ID: is):
        - Bullet list kullan (<ul class="bullet-list">).
        - Yükselen Aslan liderliği ile İkizler zekasını birleştir.
-    
+       - Günün transit verilerini iş kararlarına yansıt.
+
     6. FİNANS (ID: finans):
        - Genel piyasa haberi VERME.
        - Fatih'in Whitelist'indeki hisseler için (QQQI, SCHD vs.) somut "Davranışsal Notlar" yaz.
        - Hisse adlarını <span class="ticker-pill">HİSSE</span> şeklinde yaz.
-    
+
     7. TEK SORU:
-       - Günün düşündürücü sorusu.
-    
+       - Günün düşündürücü sorusu (astrolojik temalarla bağlantılı olabilir).
+
     ÖNEMLİ KURALLAR:
     - Asla ```html``` bloğu koyma, sadece saf HTML kodu döndür.
     - Asla <html>, <head>, <body> taglerini açma.
     - Light mode (krem/pastel tonlar) uyumlu ol. Arka plan açık renk, yazılar koyu. CSS class'ları doğru kullan.
     - Renkli etiketler için tag-blue, tag-gold, tag-red, tag-green, tag-lavender class'larını kullan.
+    - Horoskop bölümünde gerçek gezegen pozisyonlarını kullan, uydurma bilgi verme.
+    - Astroloji kaynaklarına link verirken sadece yukarıda listelenen güvenilir kaynakları kullan.
     """
 
     model = genai.GenerativeModel('gemini-2.0-flash')
