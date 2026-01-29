@@ -471,6 +471,26 @@ def get_current_time_qatar():
     qatar_tz = pytz.timezone(TIMEZONE)
     return datetime.datetime.now(qatar_tz)
 
+def _validate_html_template_placeholders():
+    allowed = {
+        "gen_time",
+        "date_string",
+        "content_body",
+        "weather_time",
+        "finance_time",
+        "market_status",
+    }
+    template_str = HTML_TEMPLATE.template
+    # Guard against JS template literals that can hide ${...} placeholders.
+    if "`" in template_str:
+        raise ValueError("HTML template contains backticks; avoid JS template literals to prevent ${...} collisions.")
+    # Find all $ident or ${ident} occurrences.
+    import re
+    matches = re.findall(r"\$(?:\{)?([A-Za-z_][A-Za-z0-9_]*)\}?", template_str)
+    unexpected = sorted({name for name in matches if name not in allowed})
+    if unexpected:
+        raise ValueError(f"Unexpected template placeholders found: {', '.join(unexpected)}")
+
 def _ensure_cache_dir():
     if not os.path.exists(CACHE_DIR):
         os.makedirs(CACHE_DIR, exist_ok=True)
@@ -896,6 +916,8 @@ def generate_daily_brief():
     if not API_KEY:
         print("Error: GEMINI_API_KEY not found.")
         return
+
+    _validate_html_template_placeholders()
 
     client = genai.Client(api_key=API_KEY)
     
