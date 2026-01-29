@@ -442,7 +442,7 @@ HTML_TEMPLATE = Template("""
         const progressBar = document.getElementById("tocProgress");
 
         const setActive = (id) => {
-            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === `#${id}`));
+            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === ("#" + id)));
         };
 
         const observer = new IntersectionObserver((entries) => {
@@ -458,7 +458,7 @@ HTML_TEMPLATE = Template("""
             const scrollTop = doc.scrollTop || document.body.scrollTop;
             const scrollHeight = doc.scrollHeight - doc.clientHeight;
             const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-            if (progressBar) progressBar.style.width = `${pct}%`;
+            if (progressBar) progressBar.style.width = pct + "%";
         };
         document.addEventListener("scroll", onScroll, { passive: true });
         onScroll();
