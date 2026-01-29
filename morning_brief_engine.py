@@ -8,7 +8,7 @@ import urllib.parse
 from html.parser import HTMLParser
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import google.generativeai as genai
+from google import genai
 from string import Template
 from kerykeion import AstrologicalSubjectFactory
 import yfinance as yf
@@ -897,7 +897,7 @@ def generate_daily_brief():
         print("Error: GEMINI_API_KEY not found.")
         return
 
-    genai.configure(api_key=API_KEY)
+    client = genai.Client(api_key=API_KEY)
     
     # Time Calc
     now_qatar = get_current_time_qatar()
@@ -1026,8 +1026,7 @@ def generate_daily_brief():
     - Tüm metin boyutları tutarlı olsun (0.95rem), başlıklar hariç.
     """
 
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
     
     # Temizlik
     raw_html = response.text.replace("```html", "").replace("```", "").strip()
