@@ -1,9 +1,10 @@
 name: Generate Morning Brief
+
 on:
   schedule:
-    # 04:00 UTC is 07:00 Qatar Time (Standard Time)
+    # 04:00 UTC = 07:00 Doha Time (Kış saati/Standart saat farkına dikkat)
     - cron: '0 4 * * *'
-  workflow_dispatch: # Allows you to click a button to run it manually
+  workflow_dispatch: # Manuel tetikleme butonu
 
 permissions:
   contents: write
@@ -11,6 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,8 +27,12 @@ jobs:
           pip install google-generativeai pytz
 
       - name: Run Generator
+        # İŞTE EKSİK OLAN KÖPRÜ BURASI 👇
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: python morning_brief_engine.py
 
       - name: Commit and Push changes
@@ -35,5 +41,5 @@ jobs:
           git config --global user.email 'bot@noreply.github.com'
           git add index.html
           git commit -m "Daily Brief Update: $(date)" || exit 0
-          git pull --rebase origin main  # <--- THIS IS THE MAGIC LINE
+          git pull --rebase origin main
           git push
