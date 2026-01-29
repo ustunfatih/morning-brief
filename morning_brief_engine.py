@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 import google.generativeai as genai
 from string import Template
 from kerykeion import AstrologicalSubjectFactory
+import yfinance as yf
 
 # --- CONFIGURATION ---
 API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -394,6 +395,44 @@ def send_email(html_content, date_str):
     except Exception as e:
         print(f"❌ BEKLENMEYEN HATA: {str(e)}")
 
+def get_financial_data():
+    """Fetch real market data for whitelisted tickers via Yahoo Finance."""
+    WHITELIST = ["QQQI", "FDVV", "SCHD", "SCHG", "IAUI", "SLV"]
+    try:
+        lines = []
+        for symbol in WHITELIST:
+            try:
+                ticker = yf.Ticker(symbol)
+                hist = ticker.history(period="5d")
+                if hist.empty:
+                    lines.append(f"  {symbol}: Veri alınamadı")
+                    continue
+
+                current = hist["Close"].iloc[-1]
+                prev = hist["Close"].iloc[-2] if len(hist) >= 2 else current
+                change_pct = ((current - prev) / prev) * 100
+
+                # 5-day trend
+                if len(hist) >= 5:
+                    week_start = hist["Close"].iloc[0]
+                    week_change = ((current - week_start) / week_start) * 100
+                    week_str = f" | 5g: {week_change:+.2f}%"
+                else:
+                    week_str = ""
+
+                direction = "yukari" if change_pct >= 0 else "asagi"
+                lines.append(
+                    f"  {symbol}: ${current:.2f} ({change_pct:+.2f}% {direction}){week_str} | Hacim: {hist['Volume'].iloc[-1]:,.0f}"
+                )
+            except Exception as e:
+                lines.append(f"  {symbol}: Hata - {str(e)[:50]}")
+
+        return "GERÇEK PİYASA VERİLERİ (Yahoo Finance):\n" + "\n".join(lines)
+    except Exception as e:
+        print(f"⚠️ Finansal veri hatası: {e}")
+        return "(Finansal veri alınamadı, genel bilgi kullan.)"
+
+
 def get_planetary_data(now_qatar):
     """Compute real planetary positions using Swiss Ephemeris via kerykeion."""
     try:
@@ -504,6 +543,9 @@ def generate_daily_brief():
     # Compute real planetary positions
     planetary_data = get_planetary_data(now_qatar)
 
+    # Fetch real financial data
+    financial_data = get_financial_data()
+
     # --- ENRICHED PROMPT WITH REAL EPHEMERIS DATA ---
     prompt = f"""
     Sen Fatih için "Morning Brief" hazırlayan, çok zeki ve biraz da esprili bir astroloji & finans asistanısın.
@@ -519,6 +561,8 @@ def generate_daily_brief():
 
     PORTFÖY İZLEME LISTESI (Whitelist): QQQI, FDVV, SCHD, SCHG, IAUI, SLV.
     YASAKLI LISTE (Blacklist): YMAG, TQQQ, GLDW.
+
+    {financial_data}
 
     TAKİP EDİLEN ASTROLOG KAYNAKLARI:
     {ASTROLOGER_SOURCES}
@@ -566,9 +610,11 @@ def generate_daily_brief():
        - Günün transit verilerini iş kararlarına yansıt.
 
     6. FİNANS (ID: finans):
-       - Genel piyasa haberi VERME.
-       - Fatih'in Whitelist'indeki hisseler için (QQQI, SCHD vs.) somut "Davranışsal Notlar" yaz.
+       - YUKARIDA VERİLEN GERÇEK PİYASA VERİLERİNİ KULLAN. Fiyat ve değişim yüzdelerini göster.
+       - Fatih'in Whitelist'indeki hisseler için somut "Davranışsal Notlar" yaz.
+       - Her hissenin gerçek fiyatını ve günlük değişimini belirt.
        - Hisse adlarını <span class="ticker-pill">HİSSE</span> şeklinde yaz.
+       - Uydurma fiyat verme, yukarıdaki Yahoo Finance verilerini kullan.
 
     7. TEK SORU:
        - Günün düşündürücü sorusu (astrolojik temalarla bağlantılı olabilir).
