@@ -35,4 +35,5 @@ jobs:
           git config --global user.email 'bot@noreply.github.com'
           git add index.html
           git commit -m "Daily Brief Update: $(date)" || exit 0
+          git pull --rebase origin main  # <--- THIS IS THE MAGIC LINE
           git push
