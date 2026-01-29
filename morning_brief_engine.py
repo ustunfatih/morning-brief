@@ -2,6 +2,9 @@ import os
 import datetime
 import pytz
 import smtplib
+import json
+import urllib.request
+import urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import google.generativeai as genai
@@ -324,10 +327,11 @@ HTML_TEMPLATE = Template("""
     <!-- Navigation -->
     <nav class="toc-scroller">
         <a href="#odak" class="toc-link">Odak</a>
+        <a href="#hava" class="toc-link">Hava</a>
+        <a href="#astro" class="toc-link">Astro</a>
         <a href="#karar" class="toc-link">Karar</a>
         <a href="#is" class="toc-link">İş</a>
         <a href="#finans" class="toc-link">Finans</a>
-        <a href="#astro" class="toc-link">Astro</a>
     </nav>
 
     <div class="container">
@@ -394,6 +398,69 @@ def send_email(html_content, date_str):
         print("❌ HATA: Kullanıcı adı veya şifre yanlış! (App Password kullandığından emin misin?)")
     except Exception as e:
         print(f"❌ BEKLENMEYEN HATA: {str(e)}")
+
+def get_weather_data():
+    """Fetch hourly weather forecast for Doha using Open-Meteo API (no API key needed)."""
+    try:
+        # WMO weather code descriptions in Turkish
+        wmo_codes = {
+            0: "Açık", 1: "Az bulutlu", 2: "Parçalı bulutlu", 3: "Bulutlu",
+            45: "Sisli", 48: "Kırağılı sis",
+            51: "Hafif çisenti", 53: "Çisenti", 55: "Yoğun çisenti",
+            61: "Hafif yağmur", 63: "Yağmur", 65: "Şiddetli yağmur",
+            71: "Hafif kar", 73: "Kar", 75: "Yoğun kar",
+            80: "Hafif sağanak", 81: "Sağanak", 82: "Şiddetli sağanak",
+            95: "Gök gürültülü fırtına", 96: "Dolu ile fırtına", 99: "Şiddetli dolu fırtınası",
+        }
+
+        params = urllib.parse.urlencode({
+            "latitude": DOHA_LAT,
+            "longitude": DOHA_LNG,
+            "hourly": "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m",
+            "timezone": "Asia/Qatar",
+            "forecast_days": 1,
+        })
+        url = f"https://api.open-meteo.com/v1/forecast?{params}"
+
+        req = urllib.request.Request(url, headers={"User-Agent": "MorningBrief/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+
+        hourly = data.get("hourly", {})
+        times = hourly.get("time", [])
+        temps = hourly.get("temperature_2m", [])
+        feels = hourly.get("apparent_temperature", [])
+        humidity = hourly.get("relative_humidity_2m", [])
+        codes = hourly.get("weather_code", [])
+        wind = hourly.get("wind_speed_10m", [])
+
+        if not times:
+            return "(Hava durumu verisi alınamadı.)"
+
+        lines = []
+        for i in range(len(times)):
+            hour = times[i].split("T")[1][:5]
+            desc = wmo_codes.get(codes[i], f"Kod:{codes[i]}")
+            lines.append(
+                f"  {hour} | {temps[i]:.0f}°C (hissedilen {feels[i]:.0f}°C) | {desc} | "
+                f"Nem %{humidity[i]:.0f} | Rüzgar {wind[i]:.0f} km/s"
+            )
+
+        # Summary stats
+        temp_max = max(temps)
+        temp_min = min(temps)
+        summary = f"  Gün özeti: Min {temp_min:.0f}°C / Max {temp_max:.0f}°C"
+
+        return f"""DOHA HAVA DURUMU (Open-Meteo - Saatlik Tahmin):
+{summary}
+
+Saatlik detay:
+""" + "\n".join(lines)
+
+    except Exception as e:
+        print(f"⚠️ Hava durumu hatası: {e}")
+        return "(Hava durumu verisi alınamadı.)"
+
 
 def get_financial_data():
     """Fetch real market data for whitelisted tickers via Yahoo Finance."""
@@ -546,6 +613,9 @@ def generate_daily_brief():
     # Fetch real financial data
     financial_data = get_financial_data()
 
+    # Fetch weather forecast
+    weather_data = get_weather_data()
+
     # --- ENRICHED PROMPT WITH REAL EPHEMERIS DATA ---
     prompt = f"""
     Sen Fatih için "Morning Brief" hazırlayan, çok zeki ve biraz da esprili bir astroloji & finans asistanısın.
@@ -563,6 +633,8 @@ def generate_daily_brief():
     YASAKLI LISTE (Blacklist): YMAG, TQQQ, GLDW.
 
     {financial_data}
+
+    {weather_data}
 
     TAKİP EDİLEN ASTROLOG KAYNAKLARI:
     {ASTROLOGER_SOURCES}
@@ -583,7 +655,15 @@ def generate_daily_brief():
        - <div class="visual-mood"></div> div'ini mutlaka koy (CSS ile renkleniyor).
        - Kısa bir ruh hali geçiş analizi yap.
 
-    3. HOROSKOP (ID: astro):
+    3. HAVA DURUMU (ID: hava):
+       - YUKARIDA VERİLEN GERÇEK HAVA DURUMU VERİLERİNİ KULLAN.
+       - Günün özeti (min/max sıcaklık, genel durum) ve önemli saatleri vurgula.
+       - Sabah (06-09), öğle (12-15), akşam (18-21) için kısa özet ver.
+       - Sıcaklık, hissedilen sıcaklık, nem ve rüzgar bilgisini dahil et.
+       - "Ne giymeliyim?" tarzında pratik bir öneri ekle.
+       - <span class="tag tag-blue"> ile hava durumu etiketleri kullan.
+
+    4. HOROSKOP (ID: astro):
        - YUKARIDA VERİLEN GERÇEK GEZEGENSEl VERİLERİ KULLAN. Uydurma yapma!
        - Güncel transit pozisyonlarını Fatih'in natal haritasıyla karşılaştır.
        - Aslan Yükselen ve Kova/İkizler transitlerine odaklan.
@@ -595,7 +675,7 @@ def generate_daily_brief():
          Farklı günlerde farklı astrologları öner, her gün aynılarını koyma.
          Ayrıca referans kitaplarından birini de "Okuma Önerisi" olarak ekle.
 
-    4. KARAR ZAMAN HARİTASI (ID: karar):
+    5. KARAR ZAMAN HARİTASI (ID: karar):
        - Gerçek transit verilerine göre karar zamanlarını belirle.
        - MUTLAKA şu grid yapısını kullan:
          <div class="decision-grid">
@@ -604,19 +684,19 @@ def generate_daily_brief():
             <div class="decision-box">...Simge, KAÇIN, Eylem...</div>
          </div>
 
-    5. İŞ & KARİYER (ID: is):
+    6. İŞ & KARİYER (ID: is):
        - Bullet list kullan (<ul class="bullet-list">).
        - Yükselen Aslan liderliği ile İkizler zekasını birleştir.
        - Günün transit verilerini iş kararlarına yansıt.
 
-    6. FİNANS (ID: finans):
+    7. FİNANS (ID: finans):
        - YUKARIDA VERİLEN GERÇEK PİYASA VERİLERİNİ KULLAN. Fiyat ve değişim yüzdelerini göster.
        - Fatih'in Whitelist'indeki hisseler için somut "Davranışsal Notlar" yaz.
        - Her hissenin gerçek fiyatını ve günlük değişimini belirt.
        - Hisse adlarını <span class="ticker-pill">HİSSE</span> şeklinde yaz.
        - Uydurma fiyat verme, yukarıdaki Yahoo Finance verilerini kullan.
 
-    7. TEK SORU:
+    8. TEK SORU:
        - Günün düşündürücü sorusu (astrolojik temalarla bağlantılı olabilir).
 
     ÖNEMLİ KURALLAR:
