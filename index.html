@@ -31,7 +31,7 @@
             margin: 0;
             padding: 0;
             line-height: 1.6;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             min-height: 100vh;
         }
 
@@ -108,6 +108,19 @@
             justify-content: center;
             scrollbar-width: none;
         }
+        .toc-progress {
+            position: sticky;
+            top: 46px;
+            height: 3px;
+            background: rgba(232, 168, 124, 0.15);
+            z-index: 99;
+        }
+        .toc-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transition: width 0.1s linear;
+        }
         .toc-scroller::-webkit-scrollbar { display: none; }
         .toc-link {
             color: var(--text-muted);
@@ -125,9 +138,13 @@
             background: var(--accent-primary);
             border-color: var(--accent-primary);
         }
+        .toc-link:focus-visible {
+            outline: 2px solid #C07A50;
+            outline-offset: 2px;
+        }
 
         /* Sections */
-        .section-wrapper { padding: 12px 15px 0 15px; }
+        .section-wrapper { padding: 12px 15px 0 15px; scroll-margin-top: 72px; }
 
         /* Cards */
         .card {
@@ -166,15 +183,15 @@
         .tag-lavender { background: rgba(195, 177, 225, 0.25); color: #8B72B2; }
 
         /* Typography & Lists */
-        p { margin-bottom: 10px; font-size: 0.85rem; color: #555; }
+        p { margin-bottom: 10px; font-size: 0.95rem; color: #555; }
         p:last-child { margin-bottom: 0; }
-        h2, h3, h4 { font-size: 1rem; margin: 0 0 8px 0; }
+        h2, h3, h4 { font-size: 1.1rem; margin: 0 0 8px 0; }
         ul.bullet-list { list-style: none; padding: 0; margin: 0; }
         ul.bullet-list li {
             position: relative;
             padding-left: 18px;
             margin-bottom: 8px;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             color: #4A4A4A;
         }
         ul.bullet-list li::before {
@@ -222,12 +239,12 @@
             border-radius: 10px;
             padding: 10px 8px;
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: #4A4A4A;
         }
         .weather-period strong {
             display: block;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
             margin-bottom: 4px;
             text-transform: uppercase;
@@ -253,8 +270,8 @@
             border: 1px solid var(--border-light);
         }
         .d-icon { font-size: 1.2rem; margin-bottom: 4px; }
-        .d-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
-        .d-val { font-size: 0.8rem; font-weight: 700; margin-top: 2px; }
+        .d-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+        .d-val { font-size: 0.85rem; font-weight: 700; margin-top: 2px; }
         .d-good { color: var(--accent-success); }
         .d-bad { color: var(--accent-danger); }
         .d-neutral { color: var(--text-muted); }
@@ -281,6 +298,11 @@
             border-top: 1px solid var(--border-light);
             margin-top: 12px;
         }
+        .data-freshness {
+            font-size: 0.75rem;
+            color: #9A8E82;
+            margin-top: 6px;
+        }
 
         .status-bar {
             background: #F5EDE3;
@@ -299,10 +321,16 @@
         @media (min-width: 1024px) {
             .container, .header-graphic { max-width: 680px; }
         }
+        @media (max-width: 420px) {
+            body { font-size: 0.92rem; }
+            .weather-periods { grid-template-columns: 1fr; }
+            .decision-grid { grid-template-columns: 1fr; }
+            .card { padding: 14px; }
+        }
     </style>
 </head>
 <body>
-    <div class="status-bar">SON GÜNCELLEME: 20:43:55 (Qatar)</div>
+    <div class="status-bar">SON GÜNCELLEME: 21:36:37 (Qatar)</div>
 
     <!-- Header Wrapper to Center on Desktop -->
     <div class="header-wrapper">
@@ -330,6 +358,7 @@
         <a href="#is" class="toc-link">İş</a>
         <a href="#finans" class="toc-link">Finans</a>
     </nav>
+    <div class="toc-progress"><div class="toc-progress-bar" id="tocProgress"></div></div>
 
     <!-- Mood Band - decorative gradient strip -->
     <div class="mood-band"></div>
@@ -338,83 +367,113 @@
         <!-- AI GENERATED CONTENT INJECTED HERE -->
         <div class="section-wrapper" id="odak">
     <div class="card" style="border-left: 4px solid var(--accent-primary);">
-        <strong>Motto:</strong> İletişimle yüksel, dengeyle parla, liderlikle iz bırak!
-        <br>
-        <strong>3 Kelime:</strong> Zeka, Diplomasi, Özgüven.
-        <br><br>
-        Dün biraz içe dönüktün, Fatih. Bugün İkizler Ayı ile beraber daha sosyal ve iletişim odaklı bir güne geçiş yapıyorsun.
+        <p><strong>Motto:</strong> Yaratıcılığını parlat, ilişkilerini dengele, geleceğe odaklan!</p>
+        <p><strong>3 Kelime Kuralı:</strong> İletişim, Estetik, İleri.</p>
     </div>
+    <p style="font-size:0.95rem; margin-top:8px;">Dünden bugüne ruh halin: Dün biraz içe dönük ve detaycıydın, bugün ise daha sosyal, yaratıcı ve geleceğe yöneliksin.</p>
 </div>
 
 <div class="section-wrapper" id="hava">
     <div class="weather-card">
         <div class="weather-icon-wrap">
-            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="26" cy="26" r="12" fill="#F6D87E" stroke="#E8A87C" stroke-width="2"/><g stroke="#E8A87C" stroke-width="2" stroke-linecap="round"><line x1="26" y1="4" x2="26" y2="10"/><line x1="26" y1="42" x2="26" y2="48"/><line x1="4" y1="26" x2="10" y2="26"/><line x1="42" y1="26" x2="48" y2="26"/><line x1="10.4" y1="10.4" x2="14.6" y2="14.6"/><line x1="37.4" y1="37.4" x2="41.6" y2="41.6"/><line x1="10.4" y1="41.6" x2="14.6" y2="37.4"/><line x1="37.4" y1="14.6" x2="41.6" y2="10.4"/></g></svg>
-            <div class="weather-summary">Güneşli ve parçalı bulutlu bir gün seni bekliyor.</div>
+            <svg width="52" height="52" viewbox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="26" cy="26" r="12" fill="#F6D87E" stroke="#E8A87C" stroke-width="2"></circle><g stroke="#E8A87C" stroke-width="2" stroke-linecap="round"><line x1="26" y1="4" x2="26" y2="10"></line><line x1="26" y1="42" x2="26" y2="48"></line><line x1="4" y1="26" x2="10" y2="26"></line><line x1="42" y1="26" x2="48" y2="26"></line><line x1="10.4" y1="10.4" x2="14.6" y2="14.6"></line><line x1="37.4" y1="37.4" x2="41.6" y2="41.6"></line><line x1="10.4" y1="41.6" x2="14.6" y2="37.4"></line><line x1="37.4" y1="14.6" x2="41.6" y2="10.4"></line></g></svg>
+            <div class="weather-summary">Gün boyunca parçalı bulutlu ve açık hava hakim. Sıcaklık 15°C ile 25°C arasında değişecek.</div>
         </div>
         <div class="weather-periods">
-            <div class="weather-period"><strong>Sabah:</strong> 15-18°C, parçalı bulutlu <span class="tag tag-blue">Hafif Serin</span></div>
-            <div class="weather-period"><strong>Öğle:</strong> 22-25°C, az bulutlu <span class="tag tag-blue">Güneşli</span></div>
-            <div class="weather-period"><strong>Akşam:</strong> 18-21°C, açık <span class="tag tag-blue">Ilık</span></div>
+            <div class="weather-period"><strong>Sabah</strong> 15-18°C, parçalı bulutlu.</div>
+            <div class="weather-period"><strong>Öğle</strong> 22-25°C, az bulutlu ve açık.</div>
+            <div class="weather-period"><strong>Akşam</strong> 18-21°C, açık.</div>
         </div>
-        <p style="margin-top:8px;"><em>Ne giymeliyim: Sabah ve akşam için ince bir ceket veya hırka almayı unutma. Öğlen için güneş kremi şart!</em></p>
+        <p style="margin-top:8px; font-size:0.8rem; color:#7A7A7A;">Veri zamanı: 29.01.2026 21:36</p>
+        <p style="margin-top:8px;"><em>Ne giymeliyim:</em> Hafif bir ceket veya hırka bulundurmak iyi olabilir. Gündüzleri güneş gözlüğü unutma! <span class="tag tag-blue">Hafif Giyim</span> <span class="tag tag-blue">Güneş Gözlüğü</span></p>
     </div>
 </div>
 
 <div class="section-wrapper" id="astro">
-    <p>Selam Fatih! Bugün Ay İkizler burcunda senin Güneş'ine çok yakın, iletişimin ve zihinsel aktivitenin zirvede olacağı bir gün. Kova burcundaki Güneş, Merkür, Venüs ve Mars birikimi sosyal çevreni ve işbirliklerini ön plana çıkarıyor. </p>
-    <p>Yükselen Aslan'ınla Kova burcundaki bu gezegenler karşıt açıda, bu da ilişkilerde denge kurman gerektiğini hatırlatıyor. Kendi ihtiyaçlarını ve başkalarının beklentilerini göz ardı etme.</p>
-    <p>Jüpiter Yengeç burcunda <span class="tag tag-red">retrograd</span> hareket ediyor. Geçmiş projeleri gözden geçirmek ve tamamlamak için harika bir zaman. Uranüs Boğa burcunda <span class="tag tag-red">retrograd</span>, finansal konularda beklenmedik gelişmelere açık ol.</p>
+    <h3>Astro-Analiz</h3>
+    <p style="font-size:0.95rem;">Güneş Kova burcunda ilerlerken, İkizler burcundaki Ay, iletişim ve sosyalleşme enerjini yükseltiyor. Yükselen Aslan burcunla bu enerjiyi liderlik vasıflarınla birleştirebilirsin. Kova'daki gezegen yoğunluğu (<span class="tag tag-blue">Güneş</span>, <span class="tag tag-blue">Merkür</span>, <span class="tag tag-blue">Venüs</span>, <span class="tag tag-red">Mars</span>, <span class="tag tag-blue">Plüton</span>) kariyer ve ortaklıklar konusunda dikkatli olmanı gerektirebilir. <span class="tag tag-gold">Jüpiter</span> Yengeç burcunda retro hareketinde, geçmişteki yatırım kararlarını gözden geçirmek için uygun bir zaman.</p>
 
-    <div class="card" style="background: #EDE7F6;">
-        <strong>Astro-Bilişsel Uyarı:</strong> İletişimde net olmaya çalış, yanlış anlaşılmalara karşı dikkatli ol. Kova enerjisi seni yeniliklere iterken, İkizler Ayı detaylara odaklanmanı zorlaştırabilir. Sakin kal ve önceliklerini belirle.
+    <div class="card" style="background: #EDE7F6; margin-top: 1rem;">
+        <h4>Astro-Bilişsel Uyarı</h4>
+        <p style="font-size:0.95rem;">İletişimde açık ve dürüst ol. Aceleci kararlar verme. Duygusal tepkilerini kontrol altında tutmaya çalış. Yaratıcılığını kullanarak yeni çözümler üretebilirsin.</p>
     </div>
 
-    <p><strong>Günün Astroloji Kaynakları:</strong> <a href="https://www.instagram.com/dincerguner/" target="_blank" style="color: #8B72B2; text-decoration: none;">Dinçer Güner</a>, <a href="https://astrostyle.com/" target="_blank" style="color: #8B72B2; text-decoration: none;">The AstroTwins</a>.
-    <br>
-    <strong>Okuma Önerisi:</strong> "Yükselen Burcunuzu Tanıyın" - Öner Döşer
-    </p>
+    <p style="font-size:0.95rem; margin-top: 1rem;"><strong>Günün Astroloji Kaynakları:</strong> <a href="https://www.instagram.com/handekazanova/" target="_blank" style="color: #8B72B2; text-decoration: none;">Hande Kazanova</a>, <a href="https://astrostyle.com/" target="_blank" style="color: #8B72B2; text-decoration: none;">The AstroTwins</a>.
+    <br><strong>Okuma Önerisi:</strong> "Astroloji: Kendini Bil" - Hande Kazanova</p>
 </div>
 
 <div class="section-wrapper" id="karar">
-    <p>Gezegenlerin hizalanmasıyla desteklenen, karar verme yetenekleriniz için özel olarak hazırlanmış bir zaman haritası:</p>
+    <h3>Karar Zaman Haritası</h3>
+    <p style="font-size:0.95rem;">Bugün Ay İkizler burcunda seyrederken, iletişim ve bilgi alışverişi odaklı konular ön planda. İşte karar verme rehberin:</p>
     <div class="decision-grid">
-        <div class="decision-box">✔️ <strong>EN İYİ:</strong> İletişim kur, yeni insanlarla tanış, toplantılara katıl. İkizler Ayı'nın enerjisi network'ünü genişletmek için ideal.</div>
-        <div class="decision-box">➖ <strong>NÖTR:</strong> Finansal kararlar almadan önce iyice araştır. Uranüs retrosu sürprizlere neden olabilir.</div>
-        <div class="decision-box">❌ <strong>KAÇIN:</strong> Anlaşmalarda aceleci davranma. Satürn Balık burcunda, detayları gözden kaçırmamak önemli.</div>
+        <div class="decision-box">✅ EN İYİ: Yaratıcı projeler başlatmak, yeni insanlarla tanışmak, kısa seyahatler planlamak.</div>
+        <div class="decision-box">⚪ NÖTR: Rutin işleri tamamlamak, mevcut ilişkileri güçlendirmek, finansal konularda temkinli olmak.</div>
+        <div class="decision-box">❌ KAÇIN: Riskli yatırımlar yapmak, önemli sözleşmeler imzalamak, tartışmalara girmek.</div>
     </div>
 </div>
 
 <div class="section-wrapper" id="is">
+    <h3>İş & Kariyer</h3>
     <ul class="bullet-list">
-        <li>Yükselen Aslan'ın liderlik vasıflarını kullanarak ekibini motive et ve projeleri yönet.</li>
-        <li>İkizler burcundaki Ay, iletişim becerilerini ön plana çıkarıyor. Sunumlar, toplantılar ve müzakereler için harika bir gün.</li>
-        <li>Kova enerjisi yenilikçi fikirler üretmeni sağlıyor. İş süreçlerini geliştirmek ve yeni stratejiler belirlemek için uygun bir zaman.</li>
-        <li>Jüpiter retrosu, tamamlanmamış işleri bitirmek için bir fırsat sunuyor. Ertelediğin projeleri gözden geçir.</li>
+        <li>Yükselen Aslan liderliğini kullanarak ekibini motive et ve yeni projelerde öncü ol.</li>
+        <li>İkizler zekan sayesinde karmaşık sorunlara pratik çözümler bulabilirsin.</li>
+        <li>Kova burcundaki gezegen yoğunluğu, iş ortaklıklarında dikkatli olmanı ve sözleşmeleri detaylı incelemeni gerektiriyor.</li>
+        <li>Jüpiter retrosu, geçmişteki iş kararlarını değerlendirmek ve gerekli düzeltmeleri yapmak için bir fırsat sunuyor.</li>
+        <li>Bugün iletişim becerilerinle önemli toplantılarda başarılı olabilir, fikirlerini etkili bir şekilde sunabilirsin.</li>
     </ul>
 </div>
 
 <div class="section-wrapper" id="finans">
-    <p>Piyasalar karışık sinyaller veriyor, dikkatli ol Fatih!</p>
-    <ul>
-        <li><span class="ticker-pill">QQQI</span>: $54.05 (-0.83%). <em>Davranışsal Not: Teknoloji hisselerinde düşüş var, portföyü dengele.</em></li>
-        <li><span class="ticker-pill">FDVV</span>: $57.97 (-0.18%). <em>Davranışsal Not: Değer hisseleri nispeten stabil, uzun vadeli yatırım için tut.</em></li>
-        <li><span class="ticker-pill">SCHD</span>: $29.62 (+1.09%). <em>Davranışsal Not: Temettü hisseleri yükselişte, gelir odaklı yatırım için olumlu.</em></li>
-        <li><span class="ticker-pill">SCHG</span>: $32.01 (-1.48%). <em>Davranışsal Not: Büyüme hisselerinde düşüş, kısa vadeli dalgalanmalara dikkat.</em></li>
-        <li><span class="ticker-pill">IAUI</span>: $62.65 (-0.29%). <em>Davranışsal Not: Altın fiyatları yatay seyrediyor, güvenli liman olarak portföyde tut.</em></li>
-        <li><span class="ticker-pill">SLV</span>: $104.59 (-0.96%). <em>Davranışsal Not: Gümüş fiyatları düşüşte, risk iştahını kontrol et.</em></li>
+    <h3>Finansal Durum</h3>
+    <p style="font-size:0.8rem; color:#7A7A7A;">Veri zamanı: 28.01.2026 19:00 (US/Eastern) — Piyasa açık</p>
+    <ul class="bullet-list">
+        <li><span class="ticker-pill">QQQI</span>: $54.09 (-0.75%). Davranışsal Not: Hafif düşüş gösteriyor. Teknoloji sektöründeki genel eğilimi takip et.</li>
+        <li><span class="ticker-pill">FDVV</span>: $57.95 (-0.21%). Davranışsal Not: Değer odaklı hisseler şu an istikrarlı duruyor. Uzun vadeli yatırım için tutmaya devam et.</li>
+        <li><span class="ticker-pill">SCHD</span>: $29.62 (+1.11%). Davranışsal Not: Temettü getirisi yüksek. Portföyünü dengeliyor.</li>
+        <li><span class="ticker-pill">SCHG</span>: $32.03 (-1.40%). Davranışsal Not: Büyüme hisselerinde düşüş var. Stop-loss seviyelerini gözden geçir.</li>
+        <li><span class="ticker-pill">IAUI</span>: $62.59 (-0.38%). Davranışsal Not: Altın fiyatları stabil. Enflasyona karşı koruma sağlıyor.</li>
+        <li><span class="ticker-pill">SLV</span>: $104.14 (-1.38%). Davranışsal Not: Gümüşte düşüş. Dikkatli ol.</li>
     </ul>
 </div>
 
 <div class="section-wrapper">
-    <p><strong>TEK SORU:</strong> Bugün, İkizler Ayı'nın etkisiyle hangi iletişim becerini geliştirerek hem kariyerine hem de ilişkilerine katkı sağlayabilirsin?</p>
+    <h3>Tek Soru</h3>
+    <p style="font-size:0.95rem;">Bugünün enerjisiyle bağlantılı olarak: Gelecekteki benliğin sana bugünden hangi yatırımı yapmanı tavsiye ederdi? (Zaman, para, enerji?)</p>
 </div>
         
         <!-- Footer -->
         <div class="footer">
             <p>Okuma süresi: ~2.5 dk</p>
+            <p class="data-freshness">Veri tazeliği: Hava 29.01.2026 21:36 — Finans 28.01.2026 19:00 (Piyasa açık)</p>
             <p style="opacity: 0.5;">© 2026 Morning Brief - Fatih</p>
         </div>
     </div>
+    <script>
+        const tocLinks = Array.from(document.querySelectorAll(".toc-link"));
+        const sections = tocLinks.map(link => document.querySelector(link.getAttribute("href")));
+        const progressBar = document.getElementById("tocProgress");
+
+        const setActive = (id) => {
+            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === ("#" + id)));
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) setActive(entry.target.id);
+            });
+        }, { rootMargin: "-40% 0px -50% 0px", threshold: 0 });
+
+        sections.forEach(section => section && observer.observe(section));
+
+        const onScroll = () => {
+            const doc = document.documentElement;
+            const scrollTop = doc.scrollTop || document.body.scrollTop;
+            const scrollHeight = doc.scrollHeight - doc.clientHeight;
+            const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+            if (progressBar) progressBar.style.width = pct + "%";
+        };
+        document.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+    </script>
 </body>
 </html>
