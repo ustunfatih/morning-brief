@@ -5,6 +5,7 @@ import smtplib
 import json
 import urllib.request
 import urllib.parse
+from html.parser import HTMLParser
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import google.generativeai as genai
@@ -16,6 +17,7 @@ import yfinance as yf
 API_KEY = os.environ.get("GEMINI_API_KEY")
 TIMEZONE = "Asia/Qatar"
 USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, Istanbul"
+CACHE_DIR = ".cache"
 
 # Fatih's natal chart coordinates (Istanbul, Fatih district)
 NATAL_YEAR, NATAL_MONTH, NATAL_DAY = 1989, 6, 14
@@ -91,7 +93,7 @@ HTML_TEMPLATE = Template("""
             margin: 0;
             padding: 0;
             line-height: 1.6;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             min-height: 100vh;
         }
 
@@ -168,6 +170,19 @@ HTML_TEMPLATE = Template("""
             justify-content: center;
             scrollbar-width: none;
         }
+        .toc-progress {
+            position: sticky;
+            top: 46px;
+            height: 3px;
+            background: rgba(232, 168, 124, 0.15);
+            z-index: 99;
+        }
+        .toc-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transition: width 0.1s linear;
+        }
         .toc-scroller::-webkit-scrollbar { display: none; }
         .toc-link {
             color: var(--text-muted);
@@ -185,9 +200,13 @@ HTML_TEMPLATE = Template("""
             background: var(--accent-primary);
             border-color: var(--accent-primary);
         }
+        .toc-link:focus-visible {
+            outline: 2px solid #C07A50;
+            outline-offset: 2px;
+        }
 
         /* Sections */
-        .section-wrapper { padding: 12px 15px 0 15px; }
+        .section-wrapper { padding: 12px 15px 0 15px; scroll-margin-top: 72px; }
 
         /* Cards */
         .card {
@@ -226,15 +245,15 @@ HTML_TEMPLATE = Template("""
         .tag-lavender { background: rgba(195, 177, 225, 0.25); color: #8B72B2; }
 
         /* Typography & Lists */
-        p { margin-bottom: 10px; font-size: 0.85rem; color: #555; }
+        p { margin-bottom: 10px; font-size: 0.95rem; color: #555; }
         p:last-child { margin-bottom: 0; }
-        h2, h3, h4 { font-size: 1rem; margin: 0 0 8px 0; }
+        h2, h3, h4 { font-size: 1.1rem; margin: 0 0 8px 0; }
         ul.bullet-list { list-style: none; padding: 0; margin: 0; }
         ul.bullet-list li {
             position: relative;
             padding-left: 18px;
             margin-bottom: 8px;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             color: #4A4A4A;
         }
         ul.bullet-list li::before {
@@ -282,12 +301,12 @@ HTML_TEMPLATE = Template("""
             border-radius: 10px;
             padding: 10px 8px;
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: #4A4A4A;
         }
         .weather-period strong {
             display: block;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
             margin-bottom: 4px;
             text-transform: uppercase;
@@ -313,8 +332,8 @@ HTML_TEMPLATE = Template("""
             border: 1px solid var(--border-light);
         }
         .d-icon { font-size: 1.2rem; margin-bottom: 4px; }
-        .d-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
-        .d-val { font-size: 0.8rem; font-weight: 700; margin-top: 2px; }
+        .d-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+        .d-val { font-size: 0.85rem; font-weight: 700; margin-top: 2px; }
         .d-good { color: var(--accent-success); }
         .d-bad { color: var(--accent-danger); }
         .d-neutral { color: var(--text-muted); }
@@ -341,6 +360,11 @@ HTML_TEMPLATE = Template("""
             border-top: 1px solid var(--border-light);
             margin-top: 12px;
         }
+        .data-freshness {
+            font-size: 0.75rem;
+            color: #9A8E82;
+            margin-top: 6px;
+        }
 
         .status-bar {
             background: #F5EDE3;
@@ -358,6 +382,12 @@ HTML_TEMPLATE = Template("""
         }
         @media (min-width: 1024px) {
             .container, .header-graphic { max-width: 680px; }
+        }
+        @media (max-width: 420px) {
+            body { font-size: 0.92rem; }
+            .weather-periods { grid-template-columns: 1fr; }
+            .decision-grid { grid-template-columns: 1fr; }
+            .card { padding: 14px; }
         }
     </style>
 </head>
@@ -390,6 +420,7 @@ HTML_TEMPLATE = Template("""
         <a href="#is" class="toc-link">İş</a>
         <a href="#finans" class="toc-link">Finans</a>
     </nav>
+    <div class="toc-progress"><div class="toc-progress-bar" id="tocProgress"></div></div>
 
     <!-- Mood Band - decorative gradient strip -->
     <div class="mood-band"></div>
@@ -401,9 +432,37 @@ HTML_TEMPLATE = Template("""
         <!-- Footer -->
         <div class="footer">
             <p>Okuma süresi: ~2.5 dk</p>
+            <p class="data-freshness">Veri tazeliği: Hava $weather_time — Finans $finance_time ($market_status)</p>
             <p style="opacity: 0.5;">© 2026 Morning Brief - Fatih</p>
         </div>
     </div>
+    <script>
+        const tocLinks = Array.from(document.querySelectorAll(".toc-link"));
+        const sections = tocLinks.map(link => document.querySelector(link.getAttribute("href")));
+        const progressBar = document.getElementById("tocProgress");
+
+        const setActive = (id) => {
+            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === `#${id}`));
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) setActive(entry.target.id);
+            });
+        }, { rootMargin: "-40% 0px -50% 0px", threshold: 0 });
+
+        sections.forEach(section => section && observer.observe(section));
+
+        const onScroll = () => {
+            const doc = document.documentElement;
+            const scrollTop = doc.scrollTop || document.body.scrollTop;
+            const scrollHeight = doc.scrollHeight - doc.clientHeight;
+            const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+            if (progressBar) progressBar.style.width = `${pct}%`;
+        };
+        document.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+    </script>
 </body>
 </html>
 """)
@@ -411,6 +470,123 @@ HTML_TEMPLATE = Template("""
 def get_current_time_qatar():
     qatar_tz = pytz.timezone(TIMEZONE)
     return datetime.datetime.now(qatar_tz)
+
+def _ensure_cache_dir():
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR, exist_ok=True)
+
+def _load_cache(name, ttl_minutes):
+    _ensure_cache_dir()
+    path = os.path.join(CACHE_DIR, name)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+        ts = datetime.datetime.fromisoformat(payload.get("ts"))
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if (now - ts).total_seconds() <= ttl_minutes * 60:
+            return payload
+    except Exception:
+        return None
+    return None
+
+def _save_cache(name, data):
+    _ensure_cache_dir()
+    path = os.path.join(CACHE_DIR, name)
+    payload = {
+        "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "data": data,
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False)
+
+def _format_time_for_display(dt_obj, tz_name):
+    tz = pytz.timezone(tz_name)
+    if dt_obj.tzinfo is None:
+        dt_obj = dt_obj.replace(tzinfo=datetime.timezone.utc)
+    return dt_obj.astimezone(tz).strftime("%d.%m.%Y %H:%M")
+
+def _market_status_us(now_utc):
+    eastern = pytz.timezone("US/Eastern")
+    now_et = now_utc.astimezone(eastern)
+    if now_et.weekday() >= 5:
+        return "Piyasa kapalı (hafta sonu)"
+    open_time = now_et.replace(hour=9, minute=30, second=0, microsecond=0)
+    close_time = now_et.replace(hour=16, minute=0, second=0, microsecond=0)
+    if open_time <= now_et <= close_time:
+        return "Piyasa açık"
+    return "Piyasa kapalı (saat dışı)"
+
+class _HTMLSanitizer(HTMLParser):
+    def __init__(self, allowed_tags, allowed_attrs):
+        super().__init__(convert_charrefs=True)
+        self.allowed_tags = allowed_tags
+        self.allowed_attrs = allowed_attrs
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag not in self.allowed_tags:
+            return
+        safe_attrs = []
+        for k, v in attrs:
+            if k in self.allowed_attrs.get(tag, set()):
+                safe_attrs.append((k, v))
+        attr_str = "".join([f' {k}="{v}"' for k, v in safe_attrs])
+        self.parts.append(f"<{tag}{attr_str}>")
+
+    def handle_endtag(self, tag):
+        if tag in self.allowed_tags:
+            self.parts.append(f"</{tag}>")
+
+    def handle_data(self, data):
+        self.parts.append(data)
+
+    def handle_entityref(self, name):
+        self.parts.append(f"&{name};")
+
+    def handle_charref(self, name):
+        self.parts.append(f"&#{name};")
+
+def _sanitize_html(raw_html):
+    allowed_tags = {
+        "div", "p", "ul", "li", "strong", "em", "span", "a", "br",
+        "h2", "h3", "h4",
+        "svg", "circle", "line", "path", "g", "ellipse", "polygon",
+    }
+    allowed_attrs = {
+        "div": {"class", "id", "style"},
+        "p": {"style"},
+        "ul": {"class"},
+        "li": {"class"},
+        "span": {"class", "style"},
+        "a": {"href", "target", "style"},
+        "h2": {"class"},
+        "h3": {"class"},
+        "h4": {"class"},
+        "svg": {"width", "height", "viewBox", "viewbox", "fill", "xmlns", "style", "preserveAspectRatio", "preserveaspectratio"},
+        "circle": {"cx", "cy", "r", "fill", "stroke", "stroke-width"},
+        "line": {"x1", "x2", "y1", "y2", "stroke", "stroke-width", "stroke-linecap"},
+        "path": {"d", "stroke", "stroke-width", "fill"},
+        "g": {"stroke", "stroke-width", "stroke-linecap"},
+        "ellipse": {"cx", "cy", "rx", "ry", "fill", "stroke", "stroke-width"},
+        "polygon": {"points", "fill", "stroke", "stroke-width"},
+    }
+    parser = _HTMLSanitizer(allowed_tags, allowed_attrs)
+    parser.feed(raw_html)
+    return "".join(parser.parts)
+
+def _ensure_required_sections(raw_html):
+    required_ids = ["odak", "hava", "astro", "karar", "is", "finans"]
+    missing = [sec for sec in required_ids if f'id="{sec}"' not in raw_html]
+    if not missing:
+        return raw_html
+    fallback_blocks = []
+    for sec in missing:
+        fallback_blocks.append(
+            f'<div class="section-wrapper" id="{sec}"><div class="card"><p>Bu bölüm şu an üretilemedi. Lütfen tekrar deneyin.</p></div></div>'
+        )
+    return raw_html + "\n" + "\n".join(fallback_blocks)
 
 def format_date_str(now):
     months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -489,6 +665,10 @@ WEATHER_SVGS = {
 def get_weather_data():
     """Fetch hourly weather forecast for Doha using Open-Meteo API (no API key needed)."""
     try:
+        cached = _load_cache("weather.json", ttl_minutes=60)
+        if cached:
+            return cached["data"]["text"], cached["data"]["icon"], cached["data"]["fetched_at"]
+
         # WMO weather code descriptions in Turkish
         wmo_codes = {
             0: "Açık", 1: "Az bulutlu", 2: "Parçalı bulutlu", 3: "Bulutlu",
@@ -522,7 +702,7 @@ def get_weather_data():
         wind = hourly.get("wind_speed_10m", [])
 
         if not times:
-            return "(Hava durumu verisi alınamadı.)", "partly-cloudy"
+            return "(Hava durumu verisi alınamadı.)", "partly-cloudy", datetime.datetime.now(datetime.timezone.utc).isoformat()
 
         lines = []
         for i in range(len(times)):
@@ -553,22 +733,35 @@ def get_weather_data():
 Saatlik detay:
 """ + "\n".join(lines)
 
-        return weather_text, dominant
+        fetched_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        _save_cache("weather.json", {"text": weather_text, "icon": dominant, "fetched_at": fetched_at})
+        return weather_text, dominant, fetched_at
 
     except Exception as e:
         print(f"⚠️ Hava durumu hatası: {e}")
-        return "(Hava durumu verisi alınamadı.)", "partly-cloudy"
+        return "(Hava durumu verisi alınamadı.)", "partly-cloudy", datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
 def get_financial_data():
     """Fetch real market data for whitelisted tickers via Yahoo Finance."""
     WHITELIST = ["QQQI", "FDVV", "SCHD", "SCHG", "IAUI", "SLV"]
     try:
+        cached = _load_cache("finance.json", ttl_minutes=30)
+        if cached:
+            return cached["data"]["text"], cached["data"]["fetched_at"], cached["data"]["latest_ts"]
+
         lines = []
+        latest_ts = None
+        data = yf.download(WHITELIST, period="5d", group_by="ticker", auto_adjust=False, progress=False)
         for symbol in WHITELIST:
             try:
-                ticker = yf.Ticker(symbol)
-                hist = ticker.history(period="5d")
+                if hasattr(data.columns, "levels"):
+                    hist = data[symbol] if symbol in data.columns.levels[0] else None
+                else:
+                    hist = data[symbol] if symbol in data else None
+                if hist is None or hist.empty:
+                    ticker = yf.Ticker(symbol)
+                    hist = ticker.history(period="5d")
                 if hist.empty:
                     lines.append(f"  {symbol}: Veri alınamadı")
                     continue
@@ -577,7 +770,11 @@ def get_financial_data():
                 prev = hist["Close"].iloc[-2] if len(hist) >= 2 else current
                 change_pct = ((current - prev) / prev) * 100
 
-                # 5-day trend
+                if hist.index is not None and len(hist.index) > 0:
+                    ts = hist.index[-1]
+                    if latest_ts is None or ts > latest_ts:
+                        latest_ts = ts
+
                 if len(hist) >= 5:
                     week_start = hist["Close"].iloc[0]
                     week_change = ((current - week_start) / week_start) * 100
@@ -592,10 +789,14 @@ def get_financial_data():
             except Exception as e:
                 lines.append(f"  {symbol}: Hata - {str(e)[:50]}")
 
-        return "GERÇEK PİYASA VERİLERİ (Yahoo Finance):\n" + "\n".join(lines)
+        fetched_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        latest_ts_str = latest_ts.isoformat() if latest_ts is not None else fetched_at
+        text = "GERÇEK PİYASA VERİLERİ (Yahoo Finance):\n" + "\n".join(lines)
+        _save_cache("finance.json", {"text": text, "fetched_at": fetched_at, "latest_ts": latest_ts_str})
+        return text, fetched_at, latest_ts_str
     except Exception as e:
         print(f"⚠️ Finansal veri hatası: {e}")
-        return "(Finansal veri alınamadı, genel bilgi kullan.)"
+        return "(Finansal veri alınamadı, genel bilgi kullan.)", datetime.datetime.now(datetime.timezone.utc).isoformat(), datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
 def get_planetary_data(now_qatar):
@@ -709,11 +910,16 @@ def generate_daily_brief():
     planetary_data = get_planetary_data(now_qatar)
 
     # Fetch real financial data
-    financial_data = get_financial_data()
+    financial_data, finance_fetched_at, finance_latest_ts = get_financial_data()
 
     # Fetch weather forecast
-    weather_data, weather_icon_key = get_weather_data()
+    weather_data, weather_icon_key, weather_fetched_at = get_weather_data()
     weather_icon_svg = WEATHER_SVGS.get(weather_icon_key, WEATHER_SVGS["partly-cloudy"])
+
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    market_status = _market_status_us(now_utc)
+    weather_time_display = _format_time_for_display(datetime.datetime.fromisoformat(weather_fetched_at), TIMEZONE)
+    finance_time_display = _format_time_for_display(datetime.datetime.fromisoformat(finance_latest_ts), "US/Eastern")
 
     # --- ENRICHED PROMPT WITH REAL EPHEMERIS DATA ---
     prompt = f"""
@@ -763,6 +969,7 @@ def generate_daily_brief():
              <div class="weather-period"><strong>Öğle</strong>...</div>
              <div class="weather-period"><strong>Akşam</strong>...</div>
            </div>
+           <p style="margin-top:8px; font-size:0.8rem; color:#7A7A7A;">Veri zamanı: {weather_time_display}</p>
            <p style="margin-top:8px;"><em>Ne giymeliyim: ...</em></p>
          </div>
        - YUKARIDA VERİLEN GERÇEK HAVA DURUMU VERİLERİNİ KULLAN.
@@ -802,6 +1009,7 @@ def generate_daily_brief():
        - Her hissenin gerçek fiyatını ve günlük değişimini belirt.
        - Hisse adlarını <span class="ticker-pill">HİSSE</span> şeklinde yaz.
        - Uydurma fiyat verme, yukarıdaki Yahoo Finance verilerini kullan.
+       - Bölümün hemen başında küçük bir satır ekle: "Veri zamanı: {finance_time_display} (US/Eastern) — {market_status}"
 
     7. TEK SORU:
        - Günün düşündürücü sorusu (astrolojik temalarla bağlantılı olabilir).
@@ -815,7 +1023,7 @@ def generate_daily_brief():
     - Horoskop bölümünde gerçek gezegen pozisyonlarını kullan, uydurma bilgi verme.
     - Astroloji kaynaklarına link verirken sadece yukarıda listelenen güvenilir kaynakları kullan.
     - Bölümler arası gereksiz boşluk bırakma, kompakt tut.
-    - Tüm metin boyutları tutarlı olsun (0.85rem), başlıklar hariç.
+    - Tüm metin boyutları tutarlı olsun (0.95rem), başlıklar hariç.
     """
 
     model = genai.GenerativeModel('gemini-2.0-flash')
@@ -823,12 +1031,17 @@ def generate_daily_brief():
     
     # Temizlik
     raw_html = response.text.replace("```html", "").replace("```", "").strip()
+    raw_html = _sanitize_html(raw_html)
+    raw_html = _ensure_required_sections(raw_html)
     
     # Template Birleştirme
     final_html = HTML_TEMPLATE.substitute(
         date_string=date_str,
         content_body=raw_html,
-        gen_time=gen_time_str
+        gen_time=gen_time_str,
+        weather_time=weather_time_display,
+        finance_time=finance_time_display,
+        market_status=market_status
     )
 
     # 1. Dosyaya Yaz (Web İçin)
