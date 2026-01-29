@@ -90,8 +90,8 @@ HTML_TEMPLATE = Template("""
             font-family: var(--font-stack);
             margin: 0;
             padding: 0;
-            line-height: 1.5;
-            font-size: 16px;
+            line-height: 1.6;
+            font-size: 0.85rem;
             min-height: 100vh;
         }
 
@@ -99,12 +99,12 @@ HTML_TEMPLATE = Template("""
         .container {
             max-width: 480px;
             margin: 0 auto;
-            padding: 0 0 40px 0;
+            padding: 0 0 24px 0;
         }
 
-        /* Header Graphic - FIXED RESPONSIVE */
+        /* Header Graphic - RESPONSIVE */
         .header-wrapper {
-            background-color: var(--bg-body); /* Fill sides on desktop */
+            background-color: var(--bg-body);
             width: 100%;
             display: flex;
             justify-content: center;
@@ -112,7 +112,7 @@ HTML_TEMPLATE = Template("""
 
         .header-graphic {
             width: 100%;
-            max-width: 480px; /* Limits width on desktop */
+            max-width: 480px;
             height: 180px;
             background: linear-gradient(135deg, #FFF1E6 0%, #E8F4FD 50%, #F3E8FF 100%);
             display: flex;
@@ -121,7 +121,6 @@ HTML_TEMPLATE = Template("""
             position: relative;
             overflow: hidden;
             border-bottom: 1px solid var(--border-light);
-            /* Mobile-app look on desktop */
             border-radius: 0 0 24px 24px;
         }
 
@@ -143,7 +142,16 @@ HTML_TEMPLATE = Template("""
             margin-bottom: 5px;
         }
         h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; color: #3D3D3D; }
-        
+
+        /* Mood Band - thin decorative strip */
+        .mood-band {
+            height: 6px;
+            width: 100%;
+            background: linear-gradient(90deg, var(--accent-lavender) 0%, var(--accent-secondary) 35%, var(--accent-success) 65%, var(--accent-primary) 100%);
+            margin: 0;
+            border: none;
+        }
+
         /* Navigation (TOC) */
         .toc-scroller {
             position: sticky;
@@ -157,7 +165,7 @@ HTML_TEMPLATE = Template("""
             border-bottom: 1px solid var(--border-light);
             display: flex;
             gap: 10px;
-            justify-content: center; /* Center links on desktop */
+            justify-content: center;
             scrollbar-width: none;
         }
         .toc-scroller::-webkit-scrollbar { display: none; }
@@ -179,14 +187,14 @@ HTML_TEMPLATE = Template("""
         }
 
         /* Sections */
-        .section-wrapper { padding: 20px 15px 0 15px; }
+        .section-wrapper { padding: 12px 15px 0 15px; }
 
         /* Cards */
         .card {
             background-color: var(--bg-card);
             border-radius: var(--border-radius);
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 16px;
+            margin-bottom: 12px;
             border: 1px solid var(--border-light);
             box-shadow: var(--shadow-card);
         }
@@ -194,10 +202,10 @@ HTML_TEMPLATE = Template("""
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         .card-title {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
             display: flex;
             align-items: center;
@@ -218,14 +226,15 @@ HTML_TEMPLATE = Template("""
         .tag-lavender { background: rgba(195, 177, 225, 0.25); color: #8B72B2; }
 
         /* Typography & Lists */
-        p { margin-bottom: 12px; font-size: 0.95rem; color: #555; }
+        p { margin-bottom: 10px; font-size: 0.85rem; color: #555; }
         p:last-child { margin-bottom: 0; }
+        h2, h3, h4 { font-size: 1rem; margin: 0 0 8px 0; }
         ul.bullet-list { list-style: none; padding: 0; margin: 0; }
         ul.bullet-list li {
             position: relative;
-            padding-left: 20px;
-            margin-bottom: 10px;
-            font-size: 0.95rem;
+            padding-left: 18px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
             color: #4A4A4A;
         }
         ul.bullet-list li::before {
@@ -235,14 +244,54 @@ HTML_TEMPLATE = Template("""
             color: var(--accent-secondary);
             font-weight: bold;
         }
-        
-        /* Visual Mood */
-        .visual-mood {
-            height: 60px;
-            border-radius: 12px;
-            background: linear-gradient(90deg, var(--accent-lavender) 0%, var(--accent-secondary) 50%, var(--accent-primary) 100%);
-            margin-bottom: 15px;
+
+        /* Weather Card */
+        .weather-card {
+            background: linear-gradient(135deg, #E8F4FD 0%, #F0EAFF 100%);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #D4E8F0;
+            box-shadow: var(--shadow-card);
             position: relative;
+        }
+        .weather-card .weather-icon-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .weather-card .weather-icon-wrap svg {
+            flex-shrink: 0;
+        }
+        .weather-card .weather-summary {
+            font-size: 0.85rem;
+            color: #4A4A4A;
+        }
+        .weather-card .weather-summary strong {
+            color: #3D3D3D;
+        }
+        .weather-periods {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .weather-period {
+            background: rgba(255,255,255,0.7);
+            border-radius: 10px;
+            padding: 10px 8px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #4A4A4A;
+        }
+        .weather-period strong {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         /* Decision Map Grid */
@@ -286,11 +335,11 @@ HTML_TEMPLATE = Template("""
         /* Footer */
         .footer {
             text-align: center;
-            padding: 30px 20px;
+            padding: 20px 15px;
             font-size: 0.8rem;
             color: var(--text-muted);
             border-top: 1px solid var(--border-light);
-            margin-top: 20px;
+            margin-top: 12px;
         }
 
         .status-bar {
@@ -301,6 +350,14 @@ HTML_TEMPLATE = Template("""
             padding: 5px 10px;
             font-family: monospace;
             border-bottom: 1px solid var(--border-light);
+        }
+
+        /* Responsive: wider on desktop */
+        @media (min-width: 768px) {
+            .container, .header-graphic { max-width: 600px; }
+        }
+        @media (min-width: 1024px) {
+            .container, .header-graphic { max-width: 680px; }
         }
     </style>
 </head>
@@ -333,6 +390,9 @@ HTML_TEMPLATE = Template("""
         <a href="#is" class="toc-link">İş</a>
         <a href="#finans" class="toc-link">Finans</a>
     </nav>
+
+    <!-- Mood Band - decorative gradient strip -->
+    <div class="mood-band"></div>
 
     <div class="container">
         <!-- AI GENERATED CONTENT INJECTED HERE -->
@@ -399,6 +459,33 @@ def send_email(html_content, date_str):
     except Exception as e:
         print(f"❌ BEKLENMEYEN HATA: {str(e)}")
 
+def _weather_icon_class(code):
+    """Map WMO weather code to icon class: sunny, partly-cloudy, cloudy, rainy, stormy."""
+    if code in (0, 1):
+        return "sunny"
+    elif code in (2, 3):
+        return "cloudy"
+    elif code in (45, 48):
+        return "cloudy"
+    elif code in (51, 53, 55, 61, 63, 65, 80, 81, 82):
+        return "rainy"
+    elif code in (71, 73, 75):
+        return "cloudy"
+    elif code in (95, 96, 99):
+        return "stormy"
+    return "partly-cloudy"
+
+
+# Inline SVG weather icons (pastel, cartoony)
+WEATHER_SVGS = {
+    "sunny": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="26" cy="26" r="12" fill="#F6D87E" stroke="#E8A87C" stroke-width="2"/><g stroke="#E8A87C" stroke-width="2" stroke-linecap="round"><line x1="26" y1="4" x2="26" y2="10"/><line x1="26" y1="42" x2="26" y2="48"/><line x1="4" y1="26" x2="10" y2="26"/><line x1="42" y1="26" x2="48" y2="26"/><line x1="10.4" y1="10.4" x2="14.6" y2="14.6"/><line x1="37.4" y1="37.4" x2="41.6" y2="41.6"/><line x1="10.4" y1="41.6" x2="14.6" y2="37.4"/><line x1="37.4" y1="14.6" x2="41.6" y2="10.4"/></g></svg>',
+    "partly-cloudy": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="18" r="9" fill="#F6D87E" stroke="#E8A87C" stroke-width="1.5"/><g stroke="#E8A87C" stroke-width="1.5" stroke-linecap="round"><line x1="20" y1="4" x2="20" y2="7"/><line x1="9" y1="7" x2="11" y2="9.5"/><line x1="5" y1="18" x2="8" y2="18"/><line x1="31" y1="7" x2="29" y2="9.5"/></g><ellipse cx="30" cy="34" rx="14" ry="9" fill="#D8EAF6" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="22" cy="31" r="7" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="36" cy="31" r="6" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/></svg>',
+    "cloudy": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="28" cy="32" rx="16" ry="10" fill="#D8EAF6" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="18" cy="28" r="9" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="34" cy="27" r="7" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="26" cy="22" r="6" fill="#EEF4FB" stroke="#A8D8EA" stroke-width="1.5"/></svg>',
+    "rainy": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="26" cy="22" rx="15" ry="10" fill="#D8EAF6" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="16" cy="18" r="8" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="33" cy="18" r="7" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><g stroke="#A8D8EA" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="34" x2="14" y2="40"/><line x1="24" y1="34" x2="22" y2="42"/><line x1="32" y1="34" x2="30" y2="40"/></g></svg>',
+    "stormy": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="26" cy="20" rx="15" ry="10" fill="#C8C8D8" stroke="#9A9AB0" stroke-width="1.5"/><circle cx="16" cy="16" r="8" fill="#D4D4E0" stroke="#9A9AB0" stroke-width="1.5"/><circle cx="33" cy="16" r="7" fill="#D4D4E0" stroke="#9A9AB0" stroke-width="1.5"/><polygon points="24,30 28,30 25,38 30,38 22,48 25,40 21,40" fill="#F6D87E" stroke="#E8A87C" stroke-width="1"/><g stroke="#A8D8EA" stroke-width="1.8" stroke-linecap="round"><line x1="14" y1="34" x2="12" y2="40"/><line x1="36" y1="34" x2="34" y2="40"/></g></svg>',
+}
+
+
 def get_weather_data():
     """Fetch hourly weather forecast for Doha using Open-Meteo API (no API key needed)."""
     try:
@@ -435,7 +522,7 @@ def get_weather_data():
         wind = hourly.get("wind_speed_10m", [])
 
         if not times:
-            return "(Hava durumu verisi alınamadı.)"
+            return "(Hava durumu verisi alınamadı.)", "partly-cloudy"
 
         lines = []
         for i in range(len(times)):
@@ -446,20 +533,31 @@ def get_weather_data():
                 f"Nem %{humidity[i]:.0f} | Rüzgar {wind[i]:.0f} km/s"
             )
 
+        # Determine dominant weather condition (daytime hours 6-20)
+        daytime_codes = [codes[i] for i in range(len(times)) if 6 <= int(times[i].split("T")[1][:2]) <= 20]
+        if daytime_codes:
+            from collections import Counter
+            most_common_code = Counter(daytime_codes).most_common(1)[0][0]
+            dominant = _weather_icon_class(most_common_code)
+        else:
+            dominant = _weather_icon_class(codes[0])
+
         # Summary stats
         temp_max = max(temps)
         temp_min = min(temps)
         summary = f"  Gün özeti: Min {temp_min:.0f}°C / Max {temp_max:.0f}°C"
 
-        return f"""DOHA HAVA DURUMU (Open-Meteo - Saatlik Tahmin):
+        weather_text = f"""DOHA HAVA DURUMU (Open-Meteo - Saatlik Tahmin):
 {summary}
 
 Saatlik detay:
 """ + "\n".join(lines)
 
+        return weather_text, dominant
+
     except Exception as e:
         print(f"⚠️ Hava durumu hatası: {e}")
-        return "(Hava durumu verisi alınamadı.)"
+        return "(Hava durumu verisi alınamadı.)", "partly-cloudy"
 
 
 def get_financial_data():
@@ -614,7 +712,8 @@ def generate_daily_brief():
     financial_data = get_financial_data()
 
     # Fetch weather forecast
-    weather_data = get_weather_data()
+    weather_data, weather_icon_key = get_weather_data()
+    weather_icon_svg = WEATHER_SVGS.get(weather_icon_key, WEATHER_SVGS["partly-cloudy"])
 
     # --- ENRICHED PROMPT WITH REAL EPHEMERIS DATA ---
     prompt = f"""
@@ -650,20 +749,28 @@ def generate_daily_brief():
     1. ODAK ÇAPASI (ID: odak):
        - <div class="card" style="border-left: 4px solid var(--accent-primary);"> kullan.
        - İçinde bir Motto ve "3 Kelime Kuralı" olsun.
+       - Hemen altına kısa (1-2 cümle) bir ruh hali geçiş analizi yap (dün→bugün mood).
 
-    2. DÜN -> BUGÜN & MOOD:
-       - <div class="visual-mood"></div> div'ini mutlaka koy (CSS ile renkleniyor).
-       - Kısa bir ruh hali geçiş analizi yap.
-
-    3. HAVA DURUMU (ID: hava):
+    2. HAVA DURUMU (ID: hava):
+       - MUTLAKA şu yapıyı kullan:
+         <div class="weather-card">
+           <div class="weather-icon-wrap">
+             {weather_icon_svg}
+             <div class="weather-summary">... özet ...</div>
+           </div>
+           <div class="weather-periods">
+             <div class="weather-period"><strong>Sabah</strong>...</div>
+             <div class="weather-period"><strong>Öğle</strong>...</div>
+             <div class="weather-period"><strong>Akşam</strong>...</div>
+           </div>
+           <p style="margin-top:8px;"><em>Ne giymeliyim: ...</em></p>
+         </div>
        - YUKARIDA VERİLEN GERÇEK HAVA DURUMU VERİLERİNİ KULLAN.
-       - Günün özeti (min/max sıcaklık, genel durum) ve önemli saatleri vurgula.
-       - Sabah (06-09), öğle (12-15), akşam (18-21) için kısa özet ver.
-       - Sıcaklık, hissedilen sıcaklık, nem ve rüzgar bilgisini dahil et.
-       - "Ne giymeliyim?" tarzında pratik bir öneri ekle.
-       - <span class="tag tag-blue"> ile hava durumu etiketleri kullan.
+       - Sabah (06-09), öğle (12-15), akşam (18-21) sıcaklık aralığı ve durumu yaz.
+       - "Ne giymeliyim?" pratik önerisi ekle.
+       - <span class="tag tag-blue"> ile hava durumu etiketleri kullanabilirsin.
 
-    4. HOROSKOP (ID: astro):
+    3. HOROSKOP (ID: astro):
        - YUKARIDA VERİLEN GERÇEK GEZEGENSEl VERİLERİ KULLAN. Uydurma yapma!
        - Güncel transit pozisyonlarını Fatih'in natal haritasıyla karşılaştır.
        - Aslan Yükselen ve Kova/İkizler transitlerine odaklan.
@@ -675,7 +782,7 @@ def generate_daily_brief():
          Farklı günlerde farklı astrologları öner, her gün aynılarını koyma.
          Ayrıca referans kitaplarından birini de "Okuma Önerisi" olarak ekle.
 
-    5. KARAR ZAMAN HARİTASI (ID: karar):
+    4. KARAR ZAMAN HARİTASI (ID: karar):
        - Gerçek transit verilerine göre karar zamanlarını belirle.
        - MUTLAKA şu grid yapısını kullan:
          <div class="decision-grid">
@@ -684,28 +791,31 @@ def generate_daily_brief():
             <div class="decision-box">...Simge, KAÇIN, Eylem...</div>
          </div>
 
-    6. İŞ & KARİYER (ID: is):
+    5. İŞ & KARİYER (ID: is):
        - Bullet list kullan (<ul class="bullet-list">).
        - Yükselen Aslan liderliği ile İkizler zekasını birleştir.
        - Günün transit verilerini iş kararlarına yansıt.
 
-    7. FİNANS (ID: finans):
+    6. FİNANS (ID: finans):
        - YUKARIDA VERİLEN GERÇEK PİYASA VERİLERİNİ KULLAN. Fiyat ve değişim yüzdelerini göster.
        - Fatih'in Whitelist'indeki hisseler için somut "Davranışsal Notlar" yaz.
        - Her hissenin gerçek fiyatını ve günlük değişimini belirt.
        - Hisse adlarını <span class="ticker-pill">HİSSE</span> şeklinde yaz.
        - Uydurma fiyat verme, yukarıdaki Yahoo Finance verilerini kullan.
 
-    8. TEK SORU:
+    7. TEK SORU:
        - Günün düşündürücü sorusu (astrolojik temalarla bağlantılı olabilir).
 
     ÖNEMLİ KURALLAR:
     - Asla ```html``` bloğu koyma, sadece saf HTML kodu döndür.
     - Asla <html>, <head>, <body> taglerini açma.
+    - <div class="visual-mood"> KULLANMA. Mood band zaten template'te var.
     - Light mode (krem/pastel tonlar) uyumlu ol. Arka plan açık renk, yazılar koyu. CSS class'ları doğru kullan.
     - Renkli etiketler için tag-blue, tag-gold, tag-red, tag-green, tag-lavender class'larını kullan.
     - Horoskop bölümünde gerçek gezegen pozisyonlarını kullan, uydurma bilgi verme.
     - Astroloji kaynaklarına link verirken sadece yukarıda listelenen güvenilir kaynakları kullan.
+    - Bölümler arası gereksiz boşluk bırakma, kompakt tut.
+    - Tüm metin boyutları tutarlı olsun (0.85rem), başlıklar hariç.
     """
 
     model = genai.GenerativeModel('gemini-2.0-flash')
