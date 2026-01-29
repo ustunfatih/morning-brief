@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- CACHE BUSTING TAGS -->
+    <!-- CACHE BUSTING -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -18,77 +18,314 @@
             --border-radius: 16px;
             --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        body { background-color: #050505; color: #E0E0E0; font-family: Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-        .container { max-width: 480px; margin: 0 auto; padding: 20px; }
-        .card { background-color: #141414; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #222; }
-        .tag { font-size: 12px; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; font-weight: bold; background: #333; color: #fff; display: inline-block;}
-        h1 { margin: 0; font-size: 24px; color: #fff; }
-        p { color: #ccc; line-height: 1.5; }
-        .d-good { color: #4ECDC4; font-weight: bold; }
-        .d-bad { color: #FF6B6B; font-weight: bold; }
+
+        /* Reset & Base */
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            font-size: 16px;
+            min-height: 100vh;
+        }
+
+        /* Layout Container */
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 0 40px 0;
+        }
+
+        /* Header Graphic */
+        .header-graphic {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid #333;
+        }
+        .header-content {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 2;
+        }
+        .date-badge {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
         
-        /* Debug Banner */
+        /* Navigation (TOC) */
+        .toc-scroller {
+            position: sticky;
+            top: 0;
+            background: rgba(5, 5, 5, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            padding: 10px 0;
+            white-space: nowrap;
+            overflow-x: auto;
+            border-bottom: 1px solid #222;
+            display: flex;
+            gap: 10px;
+            padding-left: 15px;
+            scrollbar-width: none;
+        }
+        .toc-scroller::-webkit-scrollbar { display: none; }
+        .toc-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: var(--bg-card);
+            transition: all 0.2s;
+            border: 1px solid #333;
+        }
+        .toc-link:hover, .toc-link.active {
+            color: var(--bg-body);
+            background: var(--text-main);
+            border-color: var(--text-main);
+        }
+
+        /* Sections */
+        .section-wrapper { padding: 20px 15px 0 15px; }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #222;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tag {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .tag-blue { background: rgba(135, 206, 235, 0.15); color: var(--accent-secondary); }
+        .tag-gold { background: rgba(255, 215, 0, 0.15); color: var(--accent-primary); }
+        .tag-red { background: rgba(255, 107, 107, 0.15); color: var(--accent-danger); }
+        .tag-green { background: rgba(78, 205, 196, 0.15); color: var(--accent-success); }
+
+        /* Typography & Lists */
+        p { margin-bottom: 12px; font-size: 0.95rem; color: #ccc; }
+        p:last-child { margin-bottom: 0; }
+        ul.bullet-list { list-style: none; padding: 0; margin: 0; }
+        ul.bullet-list li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            color: #d0d0d0;
+        }
+        ul.bullet-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--accent-secondary);
+            font-weight: bold;
+        }
+        
+        /* Visual Mood */
+        .visual-mood {
+            height: 60px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, #2c3e50 0%, #3498db 50%, #f1c40f 100%);
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        /* Decision Map Grid */
+        .decision-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .decision-box {
+            background: var(--bg-card-highlight);
+            padding: 10px 5px;
+            border-radius: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .d-icon { font-size: 1.2rem; margin-bottom: 4px; }
+        .d-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
+        .d-val { font-size: 0.8rem; font-weight: 700; margin-top: 2px; }
+        .d-good { color: var(--accent-success); }
+        .d-bad { color: var(--accent-danger); }
+        .d-neutral { color: var(--text-muted); }
+
+        /* Finance Pill */
+        .ticker-pill {
+            display: inline-block;
+            background: #2A2A2A;
+            border: 1px solid #444;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+            margin-right: 4px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            font-size: 0.8rem;
+            color: #555;
+            border-top: 1px solid #222;
+            margin-top: 20px;
+        }
+        
         .status-bar {
-            font-size: 10px; 
-            color: #555; 
-            text-align: right; 
-            margin-bottom: 10px; 
+            background: #111;
+            color: #666;
+            font-size: 10px;
+            text-align: right;
+            padding: 5px 10px;
             font-family: monospace;
             border-bottom: 1px solid #222;
-            padding-bottom: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Visible Status Check -->
-        <div class="status-bar">
-            SON GÜNCELLEME: 08:55:43 (Qatar)
-        </div>
+    <div class="status-bar">SON GÜNCELLEME: 09:02:19 (Qatar)</div>
 
-        <div style="text-align:center; padding-bottom: 20px; border-bottom: 1px solid #333;">
-            <div style="font-size: 14px; color: #FFD700; font-weight: bold;">📅 29 Ocak 2026, Perşembe</div>
+    <!-- Header -->
+    <header class="header-graphic">
+        <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.3;" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <circle cx="20" cy="80" r="30" fill="#87CEEB" />
+            <circle cx="80" cy="20" r="40" fill="#FFD700" />
+            <path d="M0,50 Q50,0 100,50 T200,50" stroke="#4ECDC4" stroke-width="0.5" fill="none" />
+        </svg>
+        <div class="header-content">
+            <div class="date-badge">📅 29 Ocak 2026, Perşembe</div>
             <h1>Günaydın, Fatih.</h1>
+            <div style="font-size: 0.9rem; color: #aaa; margin-top:4px;">📍 Doha, Katar</div>
         </div>
-        
-        <!-- AI GENERATED CONTENT -->
-        <div class="card">
-    <h2>1. Odak</h2>
-    <p>Denge & Fırsat</p>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="toc-scroller">
+        <a href="#odak" class="toc-link">Odak</a>
+        <a href="#karar" class="toc-link">Karar</a>
+        <a href="#is" class="toc-link">İş</a>
+        <a href="#finans" class="toc-link">Finans</a>
+        <a href="#astro" class="toc-link">Astro</a>
+    </nav>
+
+    <div class="container">
+        <!-- AI GENERATED CONTENT INJECTED HERE -->
+        <div class="section-wrapper" id="odak">
+    <div class="card" style="border-left: 4px solid var(--accent-primary);">
+        <h3>Günün Mottosu</h3>
+        <p>"Zirveye ulaşmak için cesaretini parlat!"</p>
+        <hr>
+        <p><strong>3 Kelime Kuralı:</strong> Kararlılık, İletişim, Strateji.</p>
+    </div>
 </div>
 
-<div class="card">
-    <h2>2. Dün -> Bugün</h2>
-    <p>Dün, duygusal dengesizlikler ve kararsızlıklar ön plandaydı. Bugün, iletişim becerilerinizi kullanarak yeni fırsatlar yakalayabilirsiniz. Daha sakin ve objektif bir yaklaşımla finansal kararlar almanız gerekiyor.</p>
+<div class="section-wrapper" id="mood">
+    <h2>Dün → Bugün</h2>
+    <div class="visual-mood" style="background-color: #4CAF50;"></div>
+    <p>Dünden bugüne enerjiniz yükselişte, Fatih! Dün içe dönüklük yerini bugün daha sosyal ve dışa dönük bir tavra bırakıyor. Fırsatları değerlendirmeye hazırsınız.</p>
 </div>
 
-<div class="card">
-    <h2>3. Horoskop</h2>
-    <p><b>Aslan Yükselen:</b> Bugün sosyal çevrenizdeki hareketlilik artıyor. Yeni insanlarla tanışabilir, mevcut ilişkilerinizi güçlendirebilirsiniz. Özellikle iş ortaklıkları ve projeler açısından olumlu gelişmeler söz konusu. Kendinizi daha enerjik ve motive hissedeceksiniz. Ancak harcamalarınız konusunda dikkatli olmanız gerekiyor.</p>
-    <p><b>İkizler Güneş:</b> Zihinsel olarak aktif ve meraklısınız. Yeni bilgiler öğrenmek, iletişim kurmak ve seyahat etmek size iyi gelecek. Ancak kararsızlık ve dağınıklık sorunlarına karşı dikkatli olmalısınız. Bir konuya odaklanmakta zorlanabilirsiniz. Daha planlı ve organize olmaya çalışın.</p>
+<div class="section-wrapper" id="astro">
+    <h2>Astro-Fatih</h2>
+    <p>Yükselen Aslan'ınız bugün parlamaya hazır! <span class="tag tag-blue">Kova</span> burcundaki transitler, ortaklıklar ve iş birlikleri konusunda sizi destekliyor. İkizler Güneş'iniz ise iletişim becerilerinizi ön plana çıkararak, <span class="tag tag-blue">network</span> oluşturma fırsatları sunuyor.</p>
+
+    <div class="card" style="background: #1a1515;">
+        <h3>Astro-Bilişsel Uyarı</h3>
+        <p>Aşırı özgüven tuzağına düşmeyin. Detaylara dikkat etmek ve aceleci kararlardan kaçınmak önemli. Merkür retrosu sona erdi, ama etkileri hala devam ediyor olabilir.</p>
+    </div>
 </div>
 
-<div class="card">
-    <h2>4. İş & Kariyer</h2>
-    <p>Yaratıcılığınızı ve liderlik yeteneklerinizi sergileyebileceğiniz bir gün. Sunumlar yapmak, toplantılara katılmak ve yeni projeler başlatmak için uygun bir zaman. İş arkadaşlarınızla iletişiminiz güçlü olacak ve destek göreceksiniz. Ancak otorite figürleriyle olası gerginliklere karşı dikkatli olun. Hedeflerinize odaklanın ve sabırlı olun.</p>
+<div class="section-wrapper" id="karar">
+    <h2>Karar Zamanı Haritası</h2>
+    <div class="decision-grid">
+        <div class="decision-box">
+            ☀️ <strong>EN İYİ:</strong> Sunum yap, liderlik et, risk al.
+        </div>
+        <div class="decision-box">
+            ⚖️ <strong>NÖTR:</strong> Bekle, gözlemle, analiz et.
+        </div>
+        <div class="decision-box">
+            ⛔ <strong>KAÇIN:</strong> Dürtüsel harcamalardan, tartışmalardan, aşırı iyimserlikten.
+        </div>
+    </div>
 </div>
 
-<div class="card">
-    <h2>5. Finans</h2>
-    <p>Finansal konularda risk almaktan kaçınmanız gereken bir gün. Duygusal kararlar vermek yerine, mantıklı ve analizlere dayalı bir yaklaşım sergileyin. Mevcut yatırımlarınızı gözden geçirin ve uzun vadeli hedeflerinize odaklanın. Küçük kayıplara karşı panik yapmayın. </p>
-    <ul>
-        <li><b>QQQI:</b> TUT</li>
-        <li><b>FDVV:</b> TUT</li>
-        <li><b>SCHD:</b> EKLE (küçük miktar)</li>
-        <li><b>SCHG:</b> TUT</li>
-        <li><b>IAUI:</b> TUT</li>
-        <li><b>SLV:</b> TUT</li>
+<div class="section-wrapper" id="is">
+    <h2>İş & Kariyer</h2>
+    <ul class="bullet-list">
+        <li>Yükselen Aslan'ınızın liderlik vasıflarını kullanarak ekibinizi motive edin.</li>
+        <li>İkizler zekanızla, karmaşık sorunlara pratik çözümler üretin.</li>
+        <li>Kova transitleri, teknoloji ve inovasyon odaklı projelere yönelmeniz için işaret veriyor.</li>
+        <li>Bugün, önemli bir sunum veya toplantınız varsa, hazırlıklı olun ve kendinize güvenin.</li>
     </ul>
-    <p><b>Uyarı:</b> Yatırım tavsiyesi değildir. Kendi araştırmanızı yapın.</p>
+</div>
+
+<div class="section-wrapper" id="finans">
+    <h2>Finansal Pusula</h2>
+    <ul>
+        <li><span class="ticker-pill">QQQI</span>: Teknoloji hisselerindeki yükseliş trendini takip etmeye devam. Mevcut pozisyonunuzu koruyun.</li>
+        <li><span class="ticker-pill">FDVV</span>: Değer odaklı yatırımlarınız istikrarlı bir getiri sağlıyor. Uzun vadeli portföy çeşitlendirmesi için ideal.</li>
+        <li><span class="ticker-pill">SCHD</span>: Temettü ödemeleri konusunda beklentilerinizi karşılıyor mu? Portföyünüzdeki ağırlığını gözden geçirin.</li>
+        <li><span class="ticker-pill">SCHG</span>: Büyüme potansiyeli yüksek hisseler, ancak piyasa volatilitesine karşı dikkatli olun.</li>
+        <li><span class="ticker-pill">IAUI</span> & <span class="ticker-pill">SLV</span>: Değerli metaller portföyünüzde denge unsuru olarak kalmaya devam etsin. Kısa vadeli alım-satım fırsatlarından kaçının.</li>
+    </ul>
+</div>
+
+<div class="section-wrapper" id="soru">
+    <h2>Günün Sorusu</h2>
+    <p>Bugün attığınız adımlar, 5 yıl sonraki finansal özgürlüğünüze ne kadar katkıda bulunacak?</p>
 </div>
         
-        <div style="text-align: center; margin-top: 30px; font-size: 11px; color: #555;">
-            Sent from your GitHub Robot 🤖
+        <!-- Footer -->
+        <div class="footer">
+            <p>Okuma süresi: ~2.5 dk</p>
+            <p style="opacity: 0.5;">© 2026 Morning Brief - Fatih</p>
         </div>
     </div>
 </body>
