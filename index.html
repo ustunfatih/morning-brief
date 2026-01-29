@@ -39,9 +39,17 @@
             padding: 0 0 40px 0;
         }
 
-        /* Header Graphic */
+        /* Header Graphic - FIXED RESPONSIVE */
+        .header-wrapper {
+            background-color: var(--bg-body); /* Fill sides on desktop */
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        
         .header-graphic {
             width: 100%;
+            max-width: 480px; /* Limits width on desktop */
             height: 180px;
             background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
             display: flex;
@@ -50,7 +58,10 @@
             position: relative;
             overflow: hidden;
             border-bottom: 1px solid #333;
+            /* Mobile-app look on desktop */
+            border-radius: 0 0 24px 24px;
         }
+        
         .header-content {
             position: absolute;
             bottom: 20px;
@@ -83,7 +94,7 @@
             border-bottom: 1px solid #222;
             display: flex;
             gap: 10px;
-            padding-left: 15px;
+            justify-content: center; /* Center links on desktop */
             scrollbar-width: none;
         }
         .toc-scroller::-webkit-scrollbar { display: none; }
@@ -229,21 +240,23 @@
     </style>
 </head>
 <body>
-    <div class="status-bar">SON GÜNCELLEME: 09:05:55 (Qatar)</div>
+    <div class="status-bar">SON GÜNCELLEME: 09:20:25 (Qatar)</div>
 
-    <!-- Header -->
-    <header class="header-graphic">
-        <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.3;" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <circle cx="20" cy="80" r="30" fill="#87CEEB" />
-            <circle cx="80" cy="20" r="40" fill="#FFD700" />
-            <path d="M0,50 Q50,0 100,50 T200,50" stroke="#4ECDC4" stroke-width="0.5" fill="none" />
-        </svg>
-        <div class="header-content">
-            <div class="date-badge">📅 29 Ocak 2026, Perşembe</div>
-            <h1>Günaydın, Fatih.</h1>
-            <div style="font-size: 0.9rem; color: #aaa; margin-top:4px;">📍 Doha, Katar</div>
-        </div>
-    </header>
+    <!-- Header Wrapper to Center on Desktop -->
+    <div class="header-wrapper">
+        <header class="header-graphic">
+            <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.3;" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+                <circle cx="20" cy="80" r="30" fill="#87CEEB" />
+                <circle cx="80" cy="20" r="40" fill="#FFD700" />
+                <path d="M0,50 Q50,0 100,50 T200,50" stroke="#4ECDC4" stroke-width="0.5" fill="none" />
+            </svg>
+            <div class="header-content">
+                <div class="date-badge">📅 29 Ocak 2026, Perşembe</div>
+                <h1>Günaydın, Fatih.</h1>
+                <div style="font-size: 0.9rem; color: #aaa; margin-top:4px;">📍 Doha, Katar</div>
+            </div>
+        </header>
+    </div>
 
     <!-- Navigation -->
     <nav class="toc-scroller">
@@ -258,62 +271,75 @@
         <!-- AI GENERATED CONTENT INJECTED HERE -->
         <div class="section-wrapper" id="odak">
     <div class="card" style="border-left: 4px solid var(--accent-primary);">
-        <h4>Odak Çapası</h4>
-        <p><b>Motto:</b> Kendine inan, parılda ve yönet!</p>
-        <p><b>3 Kelime Kuralı:</b> Aksiyon, İnovasyon, Kararlılık.</p>
+        <h3>Odak Çapası</h3>
+        <p><strong>Motto:</strong> Işığını parlat, aklını kullan, fırsatları yakala!</p>
+        <p><strong>3 Kelime Kuralı:</strong> Yaratıcılık. İletişim. Cesaret.</p>
     </div>
 </div>
 
 <div class="section-wrapper" id="mood">
-    <div class="visual-mood" style="--mood-color: var(--mood-positive);"></div>
-    <p><b>Dünden Bugüne:</b> Dün Terazi Ayı'nın denge arayışındaydın, bugün ise daha Aslanvari, yaratıcı ve kendine güvenli bir enerji hakim. Duygusal dalgalanmalar yerini daha net hedeflere bırakıyor.</p>
+    <h3>Dün -> Bugün & Mood</h3>
+    <div class="visual-mood" style="--mood-color: var(--mood-upbeat);"></div>
+    <p>Dün belirsizlikler hakimdi, bugün ise enerjin yükseliyor. İletişim becerilerinle parlayacağın bir gün!</p>
 </div>
 
 <div class="section-wrapper" id="astro">
-    <h4>Astro-Analiz</h4>
-    <p><b>Yükselen Aslan:</b> Sahne senin! Bugün liderlik vasıflarını sergilemek, projelerini duyurmak ve dikkat çekmek için mükemmel bir gün. <span class="tag tag-yellow">Yaratıcılığını</span> kullan, <span class="tag tag-red">ego tuzağına</span> düşme.</p>
-    <p><b>Kova Transiti:</b> İkili ilişkilerde (iş ortaklıkları dahil) sürpriz gelişmelere açık ol. Yenilikçi fikirler havada uçuşuyor, <span class="tag tag-blue">iş birliğine</span> odaklan.</p>
-    <p><b>İkizler Transiti:</b> Zihinsel çevikliğin tavan yapacak. Yeni bilgiler öğrenmek, iletişim kurmak ve birden fazla işle aynı anda ilgilenmek için ideal. <span class="tag tag-green">Detaylara dikkat!</span></p>
+    <h3>Astro-Analiz</h3>
+    <p>Yükselen Aslan olarak, bugün sahne senin! Kova burcundaki gezegenler, ilişkilerinde <span class="tag tag-blue">yenilikçi</span> ve <span class="tag tag-blue">deneysel</span> yaklaşımlar sergilemeni teşvik ediyor. İkizler Güneş'in enerjisi ise <span class="tag tag-blue">iletişim</span> ve <span class="tag tag-blue">öğrenme</span> konularında seni destekliyor.</p>
+
     <div class="card" style="background: #1a1515;">
-        <h5>Astro-Bilişsel Uyarı</h5>
-        <p>Aşırı iyimserlik veya acelecilik finansal kararlarda hatalara yol açabilir. Özellikle yasaklı listedeki hisselere (YMAG, TQQQ, GLDW) karşı dürtüsel tepkilerden kaçın.</p>
+        <h4>Astro-Bilişsel Uyarı</h4>
+        <p>Ani kararlar alma eğiliminde olabilirsin. Özellikle ortaklıklar ve anlaşmalar konusunda iki kere düşün. Sezgilerine güven ama mantığını da devreye sokmayı unutma.</p>
     </div>
 </div>
 
 <div class="section-wrapper" id="karar">
-    <h4>Karar Zamanı Haritası</h4>
+    <h3>Karar Zamanı Haritası</h3>
     <div class="decision-grid">
-        <div class="decision-box">✔️ <b>EN İYİ:</b> Riskleri ölçülü bir şekilde değerlendirip, uzun vadeli yatırımlara odaklan.</div>
-        <div class="decision-box">🟡 <b>NÖTR:</b> Anlık piyasa dalgalanmalarına kapılmadan, stratejine sadık kal.</div>
-        <div class="decision-box">❌ <b>KAÇIN:</b> Dürtüsel alım-satım kararlarından ve spekülatif yatırımlardan uzak dur.</div>
+        <div class="decision-box">
+            <span style="font-size: 2em; color: #4CAF50;">✔️</span><br>
+            <strong>EN İYİ</strong><br>
+            Yaratıcı projelerde yer al, fikirlerini paylaş.
+        </div>
+        <div class="decision-box">
+            <span style="font-size: 2em; color: #FFEB3B;">⚠️</span><br>
+            <strong>NÖTR</strong><br>
+            Sosyal çevreni genişlet, yeni insanlarla tanış.
+        </div>
+        <div class="decision-box">
+            <span style="font-size: 2em; color: #F44336;">❌</span><br>
+            <strong>KAÇIN</strong><br>
+            Aşırı harcamalardan ve riskli yatırımlardan uzak dur.
+        </div>
     </div>
 </div>
 
 <div class="section-wrapper" id="is">
-    <h4>İş & Kariyer</h4>
+    <h3>İş & Kariyer</h3>
     <ul class="bullet-list">
-        <li><b>Yükselen Aslan etkisiyle:</b> Ekibini motive et, vizyonunu paylaş ve projelerini sahiplen.</li>
-        <li><b>İkizler zekasıyla:</b> Karmaşık problemleri çöz, yeni stratejiler geliştir ve iletişim ağını genişlet.</li>
-        <li>Bugün sunumlar, toplantılar ve networking için uygun bir gün. Kendini ifade etmekten çekinme.</li>
-        <li>Yaratıcılığını kullanarak fark yaratabilirsin.</li>
+        <li>Liderlik vasıflarını kullanarak ekibini motive et ve ortak hedeflere yönlendir.</li>
+        <li>İkizler zekan sayesinde karmaşık sorunlara pratik çözümler bulabilirsin.</li>
+        <li>Sunum ve toplantılarda etkili iletişim becerilerini kullanarak dikkat çek.</li>
+        <li>Yeni işbirlikleri ve ortaklıklar için fırsatları değerlendir.</li>
     </ul>
 </div>
 
 <div class="section-wrapper" id="finans">
-    <h4>Finans</h4>
-    <ul class="bullet-list">
-        <li><span class="ticker-pill">QQQI</span>: Teknoloji sektöründeki büyüme potansiyelini değerlendirmek için ideal. Mevcut pozisyonunu koru, yeni alım için piyasayı izle.</li>
-        <li><span class="ticker-pill">FDVV</span>: Değer odaklı hisseler portföyünü çeşitlendirmek için uygun. Temettü getirisi uzun vadede istikrarlı bir gelir sağlayabilir.</li>
-        <li><span class="ticker-pill">SCHD</span>: Temettü odaklı bir ETF olarak, portföyünde istikrar sağlayabilir. Ancak, piyasa koşullarını göz önünde bulundurarak hareket et.</li>
-        <li><span class="ticker-pill">SCHG</span>: Büyüme odaklı hisselere yatırım yapmak istiyorsan, SCHG uygun bir seçenek olabilir. Ancak, risk toleransını göz önünde bulundur.</li>
-        <li><span class="ticker-pill">IAUI</span>: Altın, güvenli liman olarak portföyünü koruyabilir. Ancak, altın fiyatlarındaki dalgalanmaları takip et.</li>
-        <li><span class="ticker-pill">SLV</span>: Gümüş, endüstriyel kullanımından dolayı büyüme potansiyeli taşıyor. Ancak, volatiliteye dikkat et.</li>
+    <h3>Finansal Bakış</h3>
+    <p>Bugün risk iştahın artabilir, dikkatli ol!</p>
+    <ul>
+        <li><span class="ticker-pill">QQQI</span>: Teknoloji sektöründeki büyüme potansiyelini değerlendirmek için uygun bir gün. Ancak, piyasa dalgalanmalarına karşı tetikte ol.</li>
+        <li><span class="ticker-pill">FDVV</span>: Yüksek temettü veren şirketler uzun vadeli istikrar sunabilir. Portföyünü çeşitlendirmek için düşünebilirsin.</li>
+        <li><span class="ticker-pill">SCHD</span>: Güvenilir temettü ödemeleri sunan sağlam şirketlere odaklan. Sabırlı ol, kısa vadeli dalgalanmalara takılma.</li>
+        <li><span class="ticker-pill">SCHG</span>: Büyüme odaklı şirketler yüksek getiri potansiyeli sunar. Ancak, risk toleransını göz önünde bulundur.</li>
+        <li><span class="ticker-pill">IAUI</span>: Altın, enflasyona karşı korunma aracı olarak portföyünde yer alabilir. Ancak, spekülatif hareketlerden kaçın.</li>
+        <li><span class="ticker-pill">SLV</span>: Gümüş, endüstriyel talebe bağlı olarak değer kazanabilir. Dikkatli ol, volatilitesi yüksek olabilir.</li>
     </ul>
 </div>
 
 <div class="section-wrapper" id="soru">
-    <h4>Tek Soru</h4>
-    <p>Bugün hangi alanda liderlik vasıflarını sergileyerek fark yaratabilirsin?</p>
+    <h3>Günün Sorusu</h3>
+    <p>Bugün hangi cesur adımı atmaya hazırsın?</p>
 </div>
         
         <!-- Footer -->
