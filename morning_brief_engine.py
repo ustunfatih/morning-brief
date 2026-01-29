@@ -576,6 +576,10 @@ def _sanitize_html(raw_html):
     parser.feed(raw_html)
     return "".join(parser.parts)
 
+def _escape_template_like_sequences(text):
+    # Prevent accidental `${...}` sequences from surviving into templates or emails.
+    return text.replace("${", "&#36;{")
+
 def _ensure_required_sections(raw_html):
     required_ids = ["odak", "hava", "astro", "karar", "is", "finans"]
     missing = [sec for sec in required_ids if f'id="{sec}"' not in raw_html]
@@ -1031,6 +1035,7 @@ def generate_daily_brief():
     # Temizlik
     raw_html = response.text.replace("```html", "").replace("```", "").strip()
     raw_html = _sanitize_html(raw_html)
+    raw_html = _escape_template_like_sequences(raw_html)
     raw_html = _ensure_required_sections(raw_html)
     
     # Template Birleştirme
