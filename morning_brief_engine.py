@@ -442,7 +442,7 @@ HTML_TEMPLATE = Template("""
         const progressBar = document.getElementById("tocProgress");
 
         const setActive = (id) => {
-            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === `#${id}`));
+            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === ("#" + id)));
         };
 
         const observer = new IntersectionObserver((entries) => {
