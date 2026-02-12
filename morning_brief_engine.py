@@ -42,6 +42,7 @@ ULUSLARARASI ASTROLOGLAR:
 - The AstroTwins (Ophira & Tali Edut): X/Twitter https://x.com/astrotwins | Instagram https://www.instagram.com/astrotwins/ | Web https://astrostyle.com/
 - Susan Miller (Astrology Zone): X/Twitter https://x.com/astrologyzone | Instagram https://www.instagram.com/astrologyzone/ | Web https://www.astrologyzone.com/
 - Co-Star Astrology: X/Twitter https://twitter.com/costarastrology | Instagram https://www.instagram.com/costarastrology/ | Web https://www.costarastrology.com/
+- Willow Grace Astrology: YouTube https://www.youtube.com/@willowgraceastrology
 """
 
 ASTROLOGY_BOOKS = """
