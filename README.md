@@ -38,12 +38,25 @@ If you want to pin a specific model for CI:
 - Name: `GEMINI_MODEL`
 - Value example: `gemini-2.5-flash`
 
+### 3.2) (Optional) Todoist tasks/events integration
+
+To include daily Todoist tasks in the brief:
+- Add repository secret: `TODOIST_API_TOKEN`
+- Add repository variables (optional):
+  - `TODOIST_FILTER` (example: `overdue | today`)
+  - `TODOIST_MAX_ITEMS` (example: `8`)
+  - `TODOIST_CACHE_TTL_MIN` (example: `10`)
+
 ### 4) Local development (optional)
 
 Copy `.env.example` to `.env` and set:
 - `GEMINI_API_KEY=...` (or `GOOGLE_API_KEY=...`)
 - `GEMINI_MODEL=gemini-2.5-flash` (optional)
 - `GEMINI_IMAGE_MODEL=gemini-2.5-flash-image` (optional, hero image)
+- `TODOIST_API_TOKEN=...` (optional, Todoist tasks section)
+- `TODOIST_FILTER="overdue | today"` (optional)
+- `TODOIST_MAX_ITEMS=8` (optional)
+- `TODOIST_CACHE_TTL_MIN=10` (optional)
 - `EMAIL_RENDER_MODE=email-safe` (optional)
 - `THEME_PROFILE=offwhite-slate` (optional)
 - `EMAIL_HTML_BUDGET_BYTES=102400` (optional warning threshold)
@@ -51,9 +64,10 @@ Copy `.env.example` to `.env` and set:
 - `EMAIL_PASS=...`
 - `EMAIL_TO=...`
 
-### 5) Re-run workflow
+### 5) Run workflow
 
-Run `Generate Morning Brief` manually from GitHub Actions (`workflow_dispatch`) once after rotating the key.
+`Generate Morning Brief` now runs automatically on `main` pushes and also on schedule.
+You can still run it manually from GitHub Actions (`workflow_dispatch`) when needed.
 
 ## Email QA Matrix (Visual Consistency)
 

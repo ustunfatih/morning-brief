@@ -1,16 +1,27 @@
 name: Generate Morning Brief
 
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - index.html
+      - assets/headers/**
   schedule:
     # GitHub cron uses UTC. 04:00 UTC = 07:00 Asia/Qatar (UTC+3).
     - cron: '0 4 * * *'
   workflow_dispatch: # Manual trigger
+
+concurrency:
+  group: generate-morning-brief-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: ${{ github.event_name != 'push' || github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     env:
       TZ: Asia/Qatar
@@ -36,6 +47,10 @@ jobs:
           GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL }}
           EMAIL_RENDER_MODE: ${{ vars.EMAIL_RENDER_MODE }}
           THEME_PROFILE: ${{ vars.THEME_PROFILE }}
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+          TODOIST_FILTER: ${{ vars.TODOIST_FILTER }}
+          TODOIST_MAX_ITEMS: ${{ vars.TODOIST_MAX_ITEMS }}
+          TODOIST_CACHE_TTL_MIN: ${{ vars.TODOIST_CACHE_TTL_MIN }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
@@ -49,6 +64,6 @@ jobs:
           if [ -d assets/headers ]; then
             git add -A assets/headers
           fi
-          git commit -m "Daily Brief Update: $(date)" || exit 0
+          git commit -m "Daily Brief Update: $(date) [skip ci]" || exit 0
           git pull --rebase origin main
           git push

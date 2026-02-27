@@ -5,9 +5,11 @@ import smtplib
 import json
 import urllib.request
 import urllib.parse
+import urllib.error
 import re
 import html
 import base64
+import time
 from html.parser import HTMLParser
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -29,6 +31,11 @@ CACHE_DIR = ".cache"
 HEADER_IMAGE_DIR = os.path.join("assets", "headers")
 HEADER_IMAGE_FILE = "header-latest.png"
 FALLBACK_HERO_BG = "#374151"
+TODOIST_API_TOKEN = os.environ.get("TODOIST_API_TOKEN")
+TODOIST_FILTER = os.environ.get("TODOIST_FILTER") or "overdue | today"
+TODOIST_MAX_ITEMS = int(os.environ.get("TODOIST_MAX_ITEMS") or "8")
+TODOIST_CACHE_TTL_MIN = int(os.environ.get("TODOIST_CACHE_TTL_MIN") or "10")
+TODOIST_API_BASE = "https://api.todoist.com/rest/v2"
 
 # Fatih's natal chart coordinates (Istanbul, Fatih district)
 NATAL_YEAR, NATAL_MONTH, NATAL_DAY = 1989, 6, 14
@@ -214,7 +221,7 @@ HTML_TEMPLATE = Template("""
               </td>
             </tr>
             <tr>
-              <td style="padding:0; border:1px solid #D0D3DC; border-top:none; background-color:#FFFFFF;">
+              <td style="padding:0; border:1px solid #D0D3DC; border-top:none; background-color:#FFFFFF; font-size:0; line-height:0; mso-line-height-rule:exactly;">
                 $hero_image_markup
               </td>
             </tr>
@@ -226,6 +233,7 @@ HTML_TEMPLATE = Template("""
                   <a href="#astro" style="color:#2B7CAB; text-decoration:none;">✨ Astro</a> ·
                   <a href="#karar" style="color:#2B7CAB; text-decoration:none;">🧭 Karar</a> ·
                   <a href="#is" style="color:#2B7CAB; text-decoration:none;">💼 İş</a> ·
+                  <a href="#todoist" style="color:#2B7CAB; text-decoration:none;">✅ Görevler</a> ·
                   <a href="#finans" style="color:#2B7CAB; text-decoration:none;">📈 Finans</a>
                 </p>
               </td>
@@ -249,7 +257,7 @@ HTML_TEMPLATE = Template("""
             <tr>
               <td style="padding:16px 18px 24px 18px; text-align:center; border-top:1px solid #D0D3DC;">
                 <p style="margin:0; font-size:12px; color:#4B5563;">Okuma süresi: ~2.5 dk</p>
-                <p style="margin:6px 0 0 0; font-size:12px; color:#4B5563;">Veri tazeliği: Hava $weather_time — Finans $finance_time ($market_status)</p>
+                <p style="margin:6px 0 0 0; font-size:12px; color:#4B5563;">Veri tazeliği: Hava $weather_time — Todoist $todoist_time — Finans $finance_time ($market_status)</p>
                 <p style="margin:8px 0 0 0; font-size:11px; color:#6B7280;">© 2026 Sabah Özeti - Fatih</p>
               </td>
             </tr>
@@ -277,6 +285,7 @@ def _validate_html_template_placeholders():
         "content_body",
         "hero_image_markup",
         "weather_time",
+        "todoist_time",
         "finance_time",
         "market_status",
     }
@@ -310,6 +319,17 @@ def _load_cache(name, ttl_minutes):
     except Exception:
         return None
     return None
+
+def _load_cache_any(name):
+    _ensure_cache_dir()
+    path = os.path.join(CACHE_DIR, name)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
 
 def _save_cache(name, data):
     _ensure_cache_dir()
@@ -460,7 +480,7 @@ def _escape_template_like_sequences(text):
     return text.replace("${", "&#36;{")
 
 def _ensure_required_sections(raw_html):
-    required_ids = ["odak", "hava", "astro", "karar", "is", "finans"]
+    required_ids = ["odak", "hava", "astro", "karar", "is", "todoist", "finans"]
     missing = [sec for sec in required_ids if f'id="{sec}"' not in raw_html]
     if not missing:
         return raw_html
@@ -616,12 +636,13 @@ Gün ruh hali: {mood['label']} (ton: {mood['tone']}).
 Temalar: {theme_text}.
 
 Kurallar:
-- Yatay oran: yaklaşık 3:1 (geniş banner kompozisyonu).
+- Yatay oran: 680x220 (yaklaşık 3.09:1) düşün ve kompozisyonu bu orana göre kur.
 - Görsel soyut olsun; fotoğrafik yüz/insan olmasın.
 - Yazı, harf, logo, watermark, sayı, ikon metni üretme.
 - Renk seti: #F6F6F7, #D0D3DC, #EE763A, #26B46D, #6EB6E8.
 - Kontrast yüksek ama göz yormayan, premium hissiyat.
 - Parlaklık ruh hali seviyesine göre ayarlansın.
+- Görsel tam dolgu (full-bleed) olsun; üst/alt/yan kenarlarda beyaz veya boş bant bırakma.
 """
 
 
@@ -634,9 +655,15 @@ def _hero_image_public_url(image_path):
 
 
 def _build_hero_image_markup(image_url, mood, date_str):
+    mood_score = mood.get("level", 3)
     badge_style = (
         "display:inline-block; margin:0 0 8px 0; font-size:12px; color:#FFFFFF; "
         "background-color:#1F2933; border:1px solid #FFFFFF; "
+        "border-radius:8px; padding:4px 8px; line-height:1.25;"
+    )
+    mood_badge_style = (
+        "display:inline-block; margin:0 0 8px 8px; font-size:12px; color:#FFFFFF; "
+        "background-color:#111827; border:1px solid #FFFFFF; "
         "border-radius:8px; padding:4px 8px; line-height:1.25;"
     )
     title_style = (
@@ -649,43 +676,56 @@ def _build_hero_image_markup(image_url, mood, date_str):
     )
     text_wrap_style = (
         "display:inline-block; background-color:#1F2933; background-color:rgba(31,41,51,0.55); "
-        "padding:10px 12px; border-radius:10px;"
+        "padding:10px 12px; border-radius:10px; font-size:16px; line-height:1.45;"
     )
 
     if not image_url:
         return f"""
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
   <tr>
-    <td align="left" valign="bottom" style="height:220px; padding:18px; vertical-align:bottom; background-color:{FALLBACK_HERO_BG};">
-      <div style="{text_wrap_style}">
-        <p style="{badge_style}">📅 {date_str}</p>
-        <p style="{title_style}">Günaydın, Fatih.</p>
-        <p style="{subtitle_style}">📍 Doha, Katar · {mood['label']}</p>
-      </div>
+    <td align="left" valign="top" style="height:220px; background-color:{FALLBACK_HERO_BG}; font-size:0; line-height:0; mso-line-height-rule:exactly; overflow:hidden;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="height:220px; border-collapse:collapse;">
+        <tr>
+          <td align="left" valign="bottom" style="padding:18px; font-size:14px; line-height:1.3;">
+            <div style="{text_wrap_style}">
+              <p style="{badge_style}">📅 {date_str}</p><span style="{mood_badge_style}">Ruh Skoru: {mood_score}/5</span>
+              <p style="{title_style}">Günaydın, Fatih.</p>
+              <p style="{subtitle_style}">📍 Doha, Katar · {mood['label']}</p>
+            </div>
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>
-"""
+""".strip()
 
     background_style = (
-        f"height:220px; padding:18px; vertical-align:bottom; "
+        f"height:220px; vertical-align:top; "
         f"background-color:{mood['overlay']}; "
-        f"background-image:url('{image_url}'); background-size:cover; background-position:center center;"
+        f"background-image:url('{image_url}'); background-size:cover; background-position:center center; background-repeat:no-repeat; "
+        f"font-size:0; line-height:0; mso-line-height-rule:exactly; overflow:hidden;"
     )
     return f"""
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
   <tr>
-    <td background="{image_url}" bgcolor="{mood['overlay']}" align="left" valign="bottom" style="{background_style}">
+    <td background="{image_url}" bgcolor="{mood['overlay']}" align="left" valign="top" style="{background_style}">
       <!--[if gte mso 9]>
       <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:680px;height:220px;">
-        <v:fill type="frame" src="{image_url}" color="{mood['overlay']}" />
+        <v:fill type="frame" aspect="atleast" src="{image_url}" color="{mood['overlay']}" />
         <v:textbox inset="0,0,0,0">
       <![endif]-->
-      <div style="{text_wrap_style}">
-        <p style="{badge_style}">📅 {date_str}</p>
-        <p style="{title_style}">Günaydın, Fatih.</p>
-        <p style="{subtitle_style}">📍 Doha, Katar · {mood['label']}</p>
-      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="height:220px; border-collapse:collapse;">
+        <tr>
+          <td align="left" valign="bottom" style="padding:18px; font-size:14px; line-height:1.3;">
+            <div style="{text_wrap_style}">
+              <p style="{badge_style}">📅 {date_str}</p><span style="{mood_badge_style}">Ruh Skoru: {mood_score}/5</span>
+              <p style="{title_style}">Günaydın, Fatih.</p>
+              <p style="{subtitle_style}">📍 Doha, Katar · {mood['label']}</p>
+            </div>
+          </td>
+        </tr>
+      </table>
       <!--[if gte mso 9]>
         </v:textbox>
       </v:rect>
@@ -693,7 +733,7 @@ def _build_hero_image_markup(image_url, mood, date_str):
     </td>
   </tr>
 </table>
-"""
+""".strip()
 
 
 def _generate_daily_header_image(client, raw_html, date_str, mood):
@@ -954,6 +994,153 @@ def get_financial_data():
         return "(Finansal veri alınamadı, genel bilgi kullan.)", datetime.datetime.now(datetime.timezone.utc).isoformat(), datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
+def _parse_iso_datetime(value):
+    if not value:
+        return None
+    raw = value.strip()
+    if raw.endswith("Z"):
+        raw = raw.replace("Z", "+00:00")
+    try:
+        parsed = datetime.datetime.fromisoformat(raw)
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=datetime.timezone.utc)
+        return parsed
+    except Exception:
+        return None
+
+
+def _todoist_request(path, params=None, allow_retry=True):
+    if not TODOIST_API_TOKEN:
+        raise RuntimeError("TODOIST_API_TOKEN bulunamadı.")
+
+    query = urllib.parse.urlencode(params or {})
+    url = f"{TODOIST_API_BASE}{path}"
+    if query:
+        url = f"{url}?{query}"
+
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {TODOIST_API_TOKEN}",
+            "User-Agent": "MorningBrief/1.0",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            payload = resp.read().decode("utf-8")
+            return json.loads(payload)
+    except urllib.error.HTTPError as err:
+        body = err.read().decode("utf-8", errors="ignore")
+        if err.code == 429 and allow_retry:
+            wait_seconds = int(err.headers.get("Retry-After") or "2")
+            wait_seconds = max(1, min(wait_seconds, 15))
+            print(f"⚠️ Todoist hız sınırı: {wait_seconds} sn sonra tekrar denenecek.")
+            time.sleep(wait_seconds)
+            return _todoist_request(path, params=params, allow_retry=False)
+        raise RuntimeError(f"Todoist API HTTP {err.code}: {body[:180]}")
+    except Exception as err:
+        raise RuntimeError(f"Todoist API isteği başarısız: {err}")
+
+
+def get_todoist_data(now_qatar):
+    """Fetch today's Todoist tasks/events in a non-blocking way."""
+    now_utc_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    if not TODOIST_API_TOKEN:
+        return "(Todoist bağlantısı yapılandırılmamış.)", now_utc_iso
+
+    fresh_cache = _load_cache("todoist.json", ttl_minutes=TODOIST_CACHE_TTL_MIN)
+    if fresh_cache:
+        return fresh_cache["data"]["text"], fresh_cache["data"]["fetched_at"]
+
+    stale_cache = _load_cache_any("todoist.json")
+    priority_map = {4: "P1", 3: "P2", 2: "P3", 1: "P4"}
+    qatar_tz = pytz.timezone(TIMEZONE)
+
+    try:
+        tasks = _todoist_request("/tasks", params={"filter": TODOIST_FILTER})
+        projects = _todoist_request("/projects")
+        project_map = {str(item.get("id")): item.get("name", "Genel") for item in projects if isinstance(item, dict)}
+
+        normalized = []
+        for task in tasks:
+            if not isinstance(task, dict):
+                continue
+            content = (task.get("content") or "").strip()
+            if not content:
+                continue
+            if len(content) > 120:
+                content = content[:117] + "..."
+
+            due = task.get("due") or {}
+            due_text = "Tarihsiz"
+            due_dt = None
+            due_date = None
+            is_overdue = False
+
+            if due.get("datetime"):
+                due_dt = _parse_iso_datetime(due.get("datetime"))
+                if due_dt:
+                    due_local = due_dt.astimezone(qatar_tz)
+                    due_text = due_local.strftime("%d.%m %H:%M")
+                    is_overdue = due_local < now_qatar
+            elif due.get("date"):
+                try:
+                    due_date = datetime.date.fromisoformat(due.get("date"))
+                    due_text = due_date.strftime("%d.%m")
+                    is_overdue = due_date < now_qatar.date()
+                except Exception:
+                    due_text = due.get("date")
+
+            normalized.append({
+                "content": content,
+                "priority": priority_map.get(int(task.get("priority") or 1), "P4"),
+                "project": project_map.get(str(task.get("project_id")), "Genel"),
+                "due_text": due_text,
+                "is_overdue": is_overdue,
+                "has_time": bool(due_dt and due_dt.astimezone(qatar_tz).date() == now_qatar.date()),
+            })
+
+        normalized.sort(key=lambda item: (0 if item["is_overdue"] else 1, item["priority"], item["due_text"]))
+        normalized = normalized[:max(1, TODOIST_MAX_ITEMS)]
+
+        overdue_count = sum(1 for item in normalized if item["is_overdue"])
+        timed_today_count = sum(1 for item in normalized if item["has_time"])
+
+        summary = (
+            f"  Toplam görev: {len(normalized)} | "
+            f"Bugün saatli etkinlik: {timed_today_count} | "
+            f"Gecikmiş: {overdue_count}"
+        )
+
+        lines = []
+        for item in normalized:
+            overdue_mark = " (Gecikmiş)" if item["is_overdue"] else ""
+            lines.append(
+                f"  - [{item['priority']}] {item['content']} | {item['project']} | {item['due_text']}{overdue_mark}"
+            )
+
+        if not lines:
+            lines.append("  - Filtreye göre bugün için görev bulunmadı.")
+
+        text = "GERÇEK TODOIST GÖREVLERİ:\n" + summary + "\n\nGörev listesi:\n" + "\n".join(lines)
+        fetched_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        _save_cache("todoist.json", {"text": text, "fetched_at": fetched_at})
+        return text, fetched_at
+    except Exception as err:
+        err_text = str(err)
+        if "HTTP 401" in err_text or "HTTP 403" in err_text:
+            print("⚠️ Todoist erişimi reddedildi: API token geçersiz veya izin yok.")
+        else:
+            print(f"⚠️ Todoist veri hatası: {err}")
+        if stale_cache and isinstance(stale_cache, dict):
+            cached_data = stale_cache.get("data", {})
+            if cached_data.get("text") and cached_data.get("fetched_at"):
+                print("ℹ️ Todoist için son geçerli önbellek kullanılıyor.")
+                return cached_data["text"], cached_data["fetched_at"]
+        return "(Todoist verisi alınamadı.)", now_utc_iso
+
+
 def get_planetary_data(now_qatar):
     """Compute real planetary positions using Swiss Ephemeris via kerykeion."""
     try:
@@ -1074,10 +1261,14 @@ def generate_daily_brief():
     weather_data, weather_icon_key, weather_fetched_at = get_weather_data()
     weather_icon_html = _weather_icon_image_html(weather_icon_key)
 
+    # Fetch Todoist tasks/events
+    todoist_data, todoist_fetched_at = get_todoist_data(now_qatar)
+
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     market_status = _market_status_us(now_utc)
     weather_time_display = _format_time_for_display(datetime.datetime.fromisoformat(weather_fetched_at), TIMEZONE)
     finance_time_display = _format_time_for_display(datetime.datetime.fromisoformat(finance_latest_ts), "US/Eastern")
+    todoist_time_display = _format_time_for_display(datetime.datetime.fromisoformat(todoist_fetched_at), TIMEZONE)
 
     if EMAIL_RENDER_MODE != "email-safe":
         print(f"⚠️ Desteklenmeyen EMAIL_RENDER_MODE='{EMAIL_RENDER_MODE}'. email-safe moduna dönülüyor.")
@@ -1112,6 +1303,7 @@ def generate_daily_brief():
     {planetary_data}
     {financial_data}
     {weather_data}
+    {todoist_data}
 
     PORTFÖY:
     - İzinli liste: QQQI, FDVV, SCHD, SCHG, IAUI, SLV
@@ -1157,7 +1349,15 @@ def generate_daily_brief():
     5) İŞ (id=is):
        - <ul class="bullet-list"> ile kısa maddeler.
 
-    6) FİNANS (id=finans):
+    6) TODOIST (id=todoist):
+       - card içinde kısa bir görev özeti ver.
+       - <ul class="bullet-list"> kullanarak en önemli görevleri listele.
+       - Her maddede görev adı + proje + saat/tarih bilgisi olsun.
+       - Başta veri zamanı satırı:
+         "Veri zamanı: {todoist_time_display} (Asia/Qatar)"
+       - "Saatli etkinlikler" varsa ayrı bir kısa paragrafla vurgula.
+
+    7) FİNANS (id=finans):
        - Gerçek fiyat + değişim yüzdesi.
        - Her hisse için davranışsal not.
        - Hisse adını <span class="ticker-pill"> ile yaz.
@@ -1165,13 +1365,13 @@ def generate_daily_brief():
          "Veri zamanı: {finance_time_display} (US/Eastern) — {market_status}"
        - Liste yapısı: <ul class="finance-list"><li>...</li></ul>
 
-    7) TEK SORU:
+    8) TEK SORU:
        - Günün düşündürücü sorusu.
 
     KURALLAR:
     - Yalnızca saf HTML döndür.
     - <html>, <head>, <body> açma.
-    - Uydurma finans veya astro veri üretme.
+    - Uydurma finans, astroloji veya Todoist görevi üretme.
     - Türkçe karakterleri ve yazım kurallarını doğru kullan.
     - Bölümler kısa, net, email-uyumlu olsun.
     """
@@ -1218,6 +1418,7 @@ def generate_daily_brief():
         hero_image_markup=hero_image_markup,
         gen_time=gen_time_str,
         weather_time=weather_time_display,
+        todoist_time=todoist_time_display,
         finance_time=finance_time_display,
         market_status=market_status
     )
