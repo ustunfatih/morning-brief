@@ -89,7 +89,7 @@ FALLBACK_HERO_BG = "#374151"
 TODOIST_DEFAULT_FILTER = "overdue | today"
 TODOIST_API_TOKEN = _normalize_todoist_token(_env_str("TODOIST_API_TOKEN", ""))
 TODOIST_FILTER = _normalize_todoist_filter(_env_str("TODOIST_FILTER", TODOIST_DEFAULT_FILTER), TODOIST_DEFAULT_FILTER)
-TODOIST_MAX_ITEMS = _env_int("TODOIST_MAX_ITEMS", 8, minimum=1, maximum=20)
+TODOIST_MAX_ITEMS = max(10, _env_int("TODOIST_MAX_ITEMS", 10, minimum=1, maximum=20))
 TODOIST_CACHE_TTL_MIN = _env_int("TODOIST_CACHE_TTL_MIN", 10, minimum=1, maximum=180)
 TODOIST_API_BASE = "https://api.todoist.com/api/v1"
 
@@ -546,6 +546,120 @@ def _ensure_required_sections(raw_html):
             f'<div class="section-wrapper" id="{sec}"><div class="card"><p>Bu bölüm şu an üretilemedi. Lütfen tekrar deneyin.</p></div></div>'
         )
     return raw_html + "\n" + "\n".join(fallback_blocks)
+
+def _replace_section_by_id(raw_html, section_id, replacement_html):
+    pattern = re.compile(
+        rf'<div[^>]*id=["\']{re.escape(section_id)}["\'][^>]*>',
+        flags=re.IGNORECASE,
+    )
+    match = pattern.search(raw_html)
+    if not match:
+        return raw_html + "\n" + replacement_html
+
+    token_pattern = re.compile(r"<div\b[^>]*>|</div>", flags=re.IGNORECASE)
+    depth = 1
+    scan_pos = match.end()
+    while depth > 0:
+        token = token_pattern.search(raw_html, scan_pos)
+        if not token:
+            break
+        token_text = token.group(0).lower()
+        if token_text.startswith("</div"):
+            depth -= 1
+        else:
+            depth += 1
+        scan_pos = token.end()
+
+    return raw_html[:match.start()] + replacement_html + raw_html[scan_pos:]
+
+
+def _todoist_rows_html(items):
+    if not items:
+        return (
+            '<tr><td colspan="4" style="padding:8px; border:1px solid #D0D3DC; '
+            'font-size:13px; color:#4B5563; background-color:#FFFFFF;">Bu kategori için görev yok.</td></tr>'
+        )
+
+    rows = []
+    for item in items:
+        task_name = html.escape(item.get("content") or "-")
+        project = html.escape(item.get("project") or "Genel")
+        due_text = html.escape(item.get("due_text") or "Tarihsiz")
+        priority = html.escape(item.get("priority") or "P4")
+        row = (
+            "<tr>"
+            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:13px; color:#1F2933;">{task_name}</td>'
+            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:12px; color:#4B5563;">{project}</td>'
+            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:12px; color:#4B5563;">{due_text}</td>'
+            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:12px; color:#4B5563; text-align:center;">{priority}</td>'
+            "</tr>"
+        )
+        rows.append(row)
+    return "".join(rows)
+
+
+def _build_todoist_section_html(todoist_struct, todoist_time_display):
+    struct = todoist_struct if isinstance(todoist_struct, dict) else {}
+    total_matched = struct.get("total_matched", 0)
+    displayed = struct.get("displayed_count", 0)
+    overdue_count = struct.get("overdue_count", 0)
+    today_count = struct.get("today_count", 0)
+    timed_today_count = struct.get("timed_today_count", 0)
+    overdue_items = struct.get("overdue_items", [])
+    today_items = struct.get("today_items", [])
+    if not isinstance(overdue_items, list):
+        overdue_items = []
+    if not isinstance(today_items, list):
+        today_items = []
+
+    table_style = (
+        "width:100%; border-collapse:collapse; border-spacing:0; "
+        "margin:8px 0 12px 0; background-color:#F6F6F7;"
+    )
+    header_cell = (
+        "padding:8px; border:1px solid #D0D3DC; background-color:#EEF4F8; "
+        "font-size:12px; font-weight:700; color:#1F2933;"
+    )
+
+    return f"""
+<div class="section-wrapper" id="todoist">
+  <div class="card">
+    <div class="card-header" style="margin-bottom:10px;">
+      <span class="tag tag-lavender">TODOIST</span>
+      <span class="card-title" style="margin-left:8px;">Görev Durumu</span>
+    </div>
+    <p style="margin:0 0 8px 0; font-size:12px; color:#4B5563;">Veri zamanı: {html.escape(todoist_time_display)} (Asia/Qatar)</p>
+    <p style="margin:0 0 10px 0; font-size:13px; color:#1F2933;">
+      Toplam görev (filtre): <strong>{total_matched}</strong> · Gösterilen: <strong>{displayed}</strong> ·
+      Gecikmiş: <strong style="color:#EE763A;">{overdue_count}</strong> ·
+      Bugün: <strong style="color:#2B7CAB;">{today_count}</strong> ·
+      Saatli etkinlik: <strong>{timed_today_count}</strong>
+    </p>
+
+    <p style="margin:0 0 6px 0;"><span class="tag tag-red">Gecikmiş</span></p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="{table_style}">
+      <tr>
+        <td style="{header_cell}">Görev</td>
+        <td style="{header_cell}">Proje</td>
+        <td style="{header_cell}">Zaman</td>
+        <td style="{header_cell}; text-align:center;">Öncelik</td>
+      </tr>
+      {_todoist_rows_html(overdue_items)}
+    </table>
+
+    <p style="margin:0 0 6px 0;"><span class="tag tag-blue">Bugün</span></p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="{table_style}">
+      <tr>
+        <td style="{header_cell}">Görev</td>
+        <td style="{header_cell}">Proje</td>
+        <td style="{header_cell}">Zaman</td>
+        <td style="{header_cell}; text-align:center;">Öncelik</td>
+      </tr>
+      {_todoist_rows_html(today_items)}
+    </table>
+  </div>
+</div>
+""".strip()
 
 
 def _html_to_plain_text(html_content):
@@ -1115,10 +1229,11 @@ def _parse_todoist_due(due_obj, qatar_tz, now_qatar):
     due_text = "Tarihsiz"
     is_overdue = False
     has_time = False
+    is_today = False
     due_sort = float("inf")
 
     if not due_raw:
-        return due_text, due_sort, is_overdue, has_time
+        return due_text, due_sort, is_overdue, has_time, is_today
 
     if "T" in due_raw:
         try:
@@ -1135,7 +1250,8 @@ def _parse_todoist_due(due_obj, qatar_tz, now_qatar):
             due_sort = due_local.timestamp()
             is_overdue = due_local < now_qatar
             has_time = due_local.date() == now_qatar.date()
-            return due_text, due_sort, is_overdue, has_time
+            is_today = due_local.date() == now_qatar.date()
+            return due_text, due_sort, is_overdue, has_time, is_today
         except Exception:
             pass
 
@@ -1143,25 +1259,39 @@ def _parse_todoist_due(due_obj, qatar_tz, now_qatar):
         due_date = datetime.date.fromisoformat(due_raw[:10])
         due_text = due_date.strftime("%d.%m")
         is_overdue = due_date < now_qatar.date()
+        is_today = due_date == now_qatar.date()
         due_midday = qatar_tz.localize(datetime.datetime(due_date.year, due_date.month, due_date.day, 12, 0))
         due_sort = due_midday.timestamp()
-        return due_text, due_sort, is_overdue, has_time
+        return due_text, due_sort, is_overdue, has_time, is_today
     except Exception:
-        return due_raw, due_sort, is_overdue, has_time
+        return due_raw, due_sort, is_overdue, has_time, is_today
 
 
 def get_todoist_data(now_qatar):
     """Fetch today's Todoist tasks/events in a non-blocking way."""
     now_utc_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    empty_struct = {
+        "total_matched": 0,
+        "displayed_count": 0,
+        "overdue_count": 0,
+        "today_count": 0,
+        "timed_today_count": 0,
+        "overdue_items": [],
+        "today_items": [],
+    }
     if not TODOIST_API_TOKEN:
-        return "(Todoist bağlantısı yapılandırılmamış.)", now_utc_iso
+        return "(Todoist bağlantısı yapılandırılmamış.)", now_utc_iso, empty_struct
 
     fresh_cache = _load_cache("todoist.json", ttl_minutes=TODOIST_CACHE_TTL_MIN)
     if fresh_cache:
         cached_data = fresh_cache.get("data", {}) if isinstance(fresh_cache, dict) else {}
+        cached_struct = cached_data.get("structured")
+        if cached_data.get("text") and cached_data.get("fetched_at") and isinstance(cached_struct, dict):
+            return cached_data["text"], cached_data["fetched_at"], cached_struct
         if cached_data.get("text") and cached_data.get("fetched_at"):
-            return cached_data["text"], cached_data["fetched_at"]
-        print("⚠️ Todoist[phase=cache_read] güncel önbellek yapısı bozuk, canlı veriye geçiliyor.")
+            print("⚠️ Todoist[phase=cache_read] önbellekte structured alanı yok, canlı veriye geçiliyor.")
+        else:
+            print("⚠️ Todoist[phase=cache_read] güncel önbellek yapısı bozuk, canlı veriye geçiliyor.")
 
     stale_cache = _load_cache_any("todoist.json")
     priority_map = {4: "P1", 3: "P2", 2: "P3", 1: "P4"}
@@ -1234,7 +1364,7 @@ def get_todoist_data(now_qatar):
                 if len(content) > 120:
                     content = content[:117] + "..."
 
-                due_text, due_sort, is_overdue, has_time = _parse_todoist_due(task.get("due"), qatar_tz, now_qatar)
+                due_text, due_sort, is_overdue, has_time, is_today = _parse_todoist_due(task.get("due"), qatar_tz, now_qatar)
 
                 priority_num = _safe_int(task.get("priority"), 1)
                 project_id = str(task.get("project_id") or "")
@@ -1248,6 +1378,7 @@ def get_todoist_data(now_qatar):
                     "due_sort": due_sort,
                     "is_overdue": is_overdue,
                     "has_time": has_time,
+                    "is_today": is_today,
                 })
             except Exception as err:
                 print(f"⚠️ Todoist[phase=normalize] bir görev atlandı: {err}")
@@ -1255,19 +1386,35 @@ def get_todoist_data(now_qatar):
 
         normalized.sort(key=lambda item: (0 if item["is_overdue"] else 1, item["due_sort"], -item["priority_num"]))
         total_matched = len(normalized)
-        normalized = normalized[:max(1, TODOIST_MAX_ITEMS)]
+        max_items = max(1, TODOIST_MAX_ITEMS)
+        overdue_all = [item for item in normalized if item["is_overdue"]]
+        today_all = [item for item in normalized if item.get("is_today") and not item["is_overdue"]]
+        other_all = [item for item in normalized if not item["is_overdue"] and not item.get("is_today")]
 
-        overdue_count = sum(1 for item in normalized if item["is_overdue"])
-        timed_today_count = sum(1 for item in normalized if item["has_time"])
+        selected_items = []
+        for bucket in (overdue_all, today_all, other_all):
+            for item in bucket:
+                if len(selected_items) >= max_items:
+                    break
+                selected_items.append(item)
+            if len(selected_items) >= max_items:
+                break
+
+        overdue_items = [item for item in selected_items if item["is_overdue"]]
+        today_items = [item for item in selected_items if item.get("is_today") and not item["is_overdue"]]
+
+        overdue_count = sum(1 for item in selected_items if item["is_overdue"])
+        today_count = sum(1 for item in selected_items if item.get("is_today") and not item["is_overdue"])
+        timed_today_count = sum(1 for item in selected_items if item["has_time"])
 
         summary = (
-            f"  Toplam görev (filtre): {total_matched} | Gösterilen: {len(normalized)} | "
+            f"  Toplam görev (filtre): {total_matched} | Gösterilen: {len(selected_items)} | "
             f"Bugün saatli etkinlik: {timed_today_count} | "
             f"Gecikmiş: {overdue_count}"
         )
 
         lines = []
-        for item in normalized:
+        for item in selected_items:
             overdue_mark = " (Gecikmiş)" if item["is_overdue"] else ""
             lines.append(
                 f"  - [{item['priority']}] {item['content']} | {item['project']} | {item['due_text']}{overdue_mark}"
@@ -1278,8 +1425,17 @@ def get_todoist_data(now_qatar):
 
         text = "GERÇEK TODOIST GÖREVLERİ:\n" + summary + "\n\nGörev listesi:\n" + "\n".join(lines)
         fetched_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
-        _save_cache("todoist.json", {"text": text, "fetched_at": fetched_at})
-        return text, fetched_at
+        structured = {
+            "total_matched": total_matched,
+            "displayed_count": len(selected_items),
+            "overdue_count": overdue_count,
+            "today_count": today_count,
+            "timed_today_count": timed_today_count,
+            "overdue_items": overdue_items,
+            "today_items": today_items,
+        }
+        _save_cache("todoist.json", {"text": text, "fetched_at": fetched_at, "structured": structured})
+        return text, fetched_at, structured
     except Exception as err:
         if isinstance(err, TodoistAPIError):
             if err.status in (401, 403):
@@ -1305,8 +1461,11 @@ def get_todoist_data(now_qatar):
             cached_data = stale_cache.get("data", {})
             if cached_data.get("text") and cached_data.get("fetched_at"):
                 print("ℹ️ Todoist[phase=cache_fallback] son geçerli önbellek kullanılıyor.")
-                return cached_data["text"], cached_data["fetched_at"]
-        return "(Todoist verisi alınamadı.)", now_utc_iso
+                cached_struct = cached_data.get("structured")
+                if not isinstance(cached_struct, dict):
+                    cached_struct = empty_struct
+                return cached_data["text"], cached_data["fetched_at"], cached_struct
+        return "(Todoist verisi alınamadı.)", now_utc_iso, empty_struct
 
 
 def get_planetary_data(now_qatar):
@@ -1430,7 +1589,7 @@ def generate_daily_brief():
     weather_icon_html = _weather_icon_image_html(weather_icon_key)
 
     # Fetch Todoist tasks/events
-    todoist_data, todoist_fetched_at = get_todoist_data(now_qatar)
+    todoist_data, todoist_fetched_at, todoist_struct = get_todoist_data(now_qatar)
 
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     market_status = _market_status_us(now_utc)
@@ -1569,6 +1728,8 @@ def generate_daily_brief():
     raw_html = _sanitize_html(raw_html)
     raw_html = _escape_template_like_sequences(raw_html)
     raw_html = _ensure_required_sections(raw_html)
+    todoist_section_html = _build_todoist_section_html(todoist_struct, todoist_time_display)
+    raw_html = _replace_section_by_id(raw_html, "todoist", todoist_section_html)
 
     mood = _score_brief_mood(raw_html)
     print(f"🧠 Özet ruh hali seviyesi: {mood['level']} ({mood['label']}) | skor={mood['score']}")

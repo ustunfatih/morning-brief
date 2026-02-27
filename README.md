@@ -46,7 +46,7 @@ To include daily Todoist tasks in the brief:
 - Integration uses Todoist API v1 (`/api/v1`). If you test manually, avoid deprecated `rest/v2` endpoints.
 - Add repository variables (optional):
   - `TODOIST_FILTER` (example: `overdue | today`)
-  - `TODOIST_MAX_ITEMS` (example: `8`)
+  - `TODOIST_MAX_ITEMS` (example: `10`)
   - `TODOIST_CACHE_TTL_MIN` (example: `10`)
 
 ### 4) Local development (optional)
@@ -57,7 +57,7 @@ Copy `.env.example` to `.env` and set:
 - `GEMINI_IMAGE_MODEL=gemini-2.5-flash-image` (optional, hero image)
 - `TODOIST_API_TOKEN=...` (optional, Todoist tasks section)
 - `TODOIST_FILTER="overdue | today"` (optional)
-- `TODOIST_MAX_ITEMS=8` (optional)
+- `TODOIST_MAX_ITEMS=10` (optional)
 - `TODOIST_CACHE_TTL_MIN=10` (optional)
 - `EMAIL_RENDER_MODE=email-safe` (optional)
 - `THEME_PROFILE=offwhite-slate` (optional)
