@@ -7,6 +7,7 @@ import urllib.request
 import urllib.parse
 import re
 import html
+import base64
 from html.parser import HTMLParser
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -21,9 +22,13 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
 EMAIL_RENDER_MODE = os.environ.get("EMAIL_RENDER_MODE") or "email-safe"
 THEME_PROFILE = os.environ.get("THEME_PROFILE") or "offwhite-slate"
 EMAIL_HTML_BUDGET_BYTES = int(os.environ.get("EMAIL_HTML_BUDGET_BYTES") or "102400")
+GEMINI_IMAGE_MODEL = os.environ.get("GEMINI_IMAGE_MODEL") or "gemini-2.5-flash-image"
 TIMEZONE = "Asia/Qatar"
-USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, Istanbul"
+USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, İstanbul"
 CACHE_DIR = ".cache"
+HEADER_IMAGE_DIR = os.path.join("assets", "headers")
+HEADER_IMAGE_FILE = "header-latest.png"
+FALLBACK_HERO_BG = "#374151"
 
 # Fatih's natal chart coordinates (Istanbul, Fatih district)
 NATAL_YEAR, NATAL_MONTH, NATAL_DAY = 1989, 6, 14
@@ -69,14 +74,15 @@ EMAIL_TO = os.environ.get("EMAIL_TO")
 # --- THE HTML TEMPLATE (EMAIL-SAFE, TABLE-FIRST) ---
 HTML_TEMPLATE = Template("""
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Morning Brief | Fatih</title>
+    <title>Sabah Özeti | Fatih</title>
     <style>
       body, table, td, p, a, span, div {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        line-height: 1.45;
       }
       img {
         display: block;
@@ -86,22 +92,24 @@ HTML_TEMPLATE = Template("""
       }
       p {
         margin: 0 0 12px 0;
+        line-height: 1.45;
       }
       .section-wrapper {
-        padding: 0 0 12px 0;
+        padding: 0 0 16px 0;
       }
       .card {
         background-color: #FFFFFF;
         border: 1px solid #D0D3DC;
         border-radius: 12px;
         padding: 16px;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
+        line-height: 1.5;
       }
       .card-title {
         font-size: 16px;
         font-weight: 700;
         color: #1F2933;
-        line-height: 1.4;
+        line-height: 1.45;
       }
       .tag {
         display: inline-block;
@@ -164,8 +172,9 @@ HTML_TEMPLATE = Template("""
         padding-left: 18px;
       }
       .bullet-list li {
-        margin: 0 0 8px 0;
+        margin: 0 0 10px 0;
         color: #1F2933;
+        line-height: 1.5;
       }
       .finance-list {
         list-style: none;
@@ -186,37 +195,38 @@ HTML_TEMPLATE = Template("""
     </style>
 </head>
 <body style="margin:0; padding:0; background-color:#F6F6F7; color:#1F2933;">
-    <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent;">
-      Morning Brief: Astroloji, hava ve finans ozeti.
+    <div style="display:none!important; mso-hide:all; max-height:0; max-width:0; overflow:hidden; opacity:0; color:transparent; font-size:1px; line-height:1px;">
+      Sabah özeti: Astroloji, hava ve finans görünümü.
     </div>
 
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#F6F6F7;">
       <tr>
         <td align="center" style="padding:0 12px 24px 12px;">
+          <!--[if mso]>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="680">
+            <tr>
+              <td>
+          <![endif]-->
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px; width:100%;">
             <tr>
               <td style="padding:6px 14px; background-color:#D0D3DC; color:#4B5563; font-size:11px; text-align:right;">
-                SON GUNCELLEME: $gen_time (Qatar)
+                SON GÜNCELLEME: $gen_time (Katar)
               </td>
             </tr>
             <tr>
-              <td style="padding:18px; background-color:#FFFFFF; border:1px solid #D0D3DC; border-top:none;">
-                <p style="display:inline-block; margin:0 0 8px 0; font-size:12px; color:#C85826; background-color:#FDEDE5; border:1px solid #F7CBB5; border-radius:8px; padding:4px 8px;">
-                  📅 $date_string
-                </p>
-                <p style="margin:0; font-size:30px; line-height:1.15; font-weight:800; color:#1F2933;">Gunaydin, Fatih.</p>
-                <p style="margin:6px 0 0 0; font-size:13px; color:#4B5563;">📍 Doha, Katar</p>
+              <td style="padding:0; border:1px solid #D0D3DC; border-top:none; background-color:#FFFFFF;">
+                $hero_image_markup
               </td>
             </tr>
             <tr>
               <td style="padding:10px 18px 8px 18px;">
                 <p style="margin:0; font-size:12px; color:#4B5563; line-height:1.5;">
-                  <a href="#odak" style="color:#2B7CAB; text-decoration:none;">Odak</a> ·
-                  <a href="#hava" style="color:#2B7CAB; text-decoration:none;">Hava</a> ·
-                  <a href="#astro" style="color:#2B7CAB; text-decoration:none;">Astro</a> ·
-                  <a href="#karar" style="color:#2B7CAB; text-decoration:none;">Karar</a> ·
-                  <a href="#is" style="color:#2B7CAB; text-decoration:none;">Is</a> ·
-                  <a href="#finans" style="color:#2B7CAB; text-decoration:none;">Finans</a>
+                  <a href="#odak" style="color:#2B7CAB; text-decoration:none;">🎯 Odak</a> ·
+                  <a href="#hava" style="color:#2B7CAB; text-decoration:none;">🌤️ Hava</a> ·
+                  <a href="#astro" style="color:#2B7CAB; text-decoration:none;">✨ Astro</a> ·
+                  <a href="#karar" style="color:#2B7CAB; text-decoration:none;">🧭 Karar</a> ·
+                  <a href="#is" style="color:#2B7CAB; text-decoration:none;">💼 İş</a> ·
+                  <a href="#finans" style="color:#2B7CAB; text-decoration:none;">📈 Finans</a>
                 </p>
               </td>
             </tr>
@@ -238,12 +248,17 @@ HTML_TEMPLATE = Template("""
             </tr>
             <tr>
               <td style="padding:16px 18px 24px 18px; text-align:center; border-top:1px solid #D0D3DC;">
-                <p style="margin:0; font-size:12px; color:#4B5563;">Okuma suresi: ~2.5 dk</p>
-                <p style="margin:6px 0 0 0; font-size:12px; color:#4B5563;">Veri tazeligi: Hava $weather_time — Finans $finance_time ($market_status)</p>
-                <p style="margin:8px 0 0 0; font-size:11px; color:#6B7280;">© 2026 Morning Brief - Fatih</p>
+                <p style="margin:0; font-size:12px; color:#4B5563;">Okuma süresi: ~2.5 dk</p>
+                <p style="margin:6px 0 0 0; font-size:12px; color:#4B5563;">Veri tazeliği: Hava $weather_time — Finans $finance_time ($market_status)</p>
+                <p style="margin:8px 0 0 0; font-size:11px; color:#6B7280;">© 2026 Sabah Özeti - Fatih</p>
               </td>
             </tr>
           </table>
+          <!--[if mso]>
+              </td>
+            </tr>
+          </table>
+          <![endif]-->
         </td>
       </tr>
     </table>
@@ -260,6 +275,7 @@ def _validate_html_template_placeholders():
         "gen_time",
         "date_string",
         "content_body",
+        "hero_image_markup",
         "weather_time",
         "finance_time",
         "market_status",
@@ -478,12 +494,247 @@ def _html_to_plain_text(html_content):
 
 def _log_payload_size(html_content):
     payload = len(html_content.encode("utf-8"))
-    print(f"📦 HTML payload size: {payload} bytes")
+    print(f"📦 HTML içeriği boyutu: {payload} bayt")
     if payload > EMAIL_HTML_BUDGET_BYTES:
         print(
-            f"⚠️ HTML payload exceeds budget ({EMAIL_HTML_BUDGET_BYTES} bytes). "
-            "Some clients may clip long emails."
+            f"⚠️ HTML içeriği bütçeyi aşıyor ({EMAIL_HTML_BUDGET_BYTES} bayt). "
+            "Bazı istemciler uzun e-postaları kesebilir."
         )
+
+
+def _strip_html_tags(raw_html):
+    text = re.sub(r"(?i)<br\s*/?>", "\n", raw_html)
+    text = re.sub(r"(?i)</(p|div|li|h2|h3|h4)>", "\n", text)
+    text = re.sub(r"(?i)<[^>]+>", " ", text)
+    return html.unescape(re.sub(r"\s+", " ", text)).strip()
+
+
+def _extract_themes(raw_html, limit=5):
+    text = _strip_html_tags(raw_html).lower()
+    words = re.findall(r"[a-zçğıöşü]{4,}", text, flags=re.IGNORECASE)
+    stop = {
+        "içinde", "olarak", "günün", "genel", "ancak", "birlikte", "şimdi", "çünkü",
+        "sonra", "kadar", "daha", "gibi", "çok", "yine", "olan", "olanlar", "için",
+        "bölüm", "bugün", "yarın", "şu", "ile", "veya", "hem", "değil", "olur",
+        "olabilir", "kısa", "net", "gerek", "notlar", "veri", "zamanı", "fatih",
+    }
+    counts = {}
+    for word in words:
+        if word in stop:
+            continue
+        counts[word] = counts.get(word, 0) + 1
+    ranked = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+    return [item[0] for item in ranked[:limit]]
+
+
+MOOD_PROFILES = {
+    1: {"label": "Çok Pozitif", "tone": "parlak, iyimser, neşeli", "overlay": "#14532D", "accent": "#26B46D"},
+    2: {"label": "Pozitif-Dengeli", "tone": "ferah, dengeli, güven veren", "overlay": "#1E3A5F", "accent": "#6EB6E8"},
+    3: {"label": "Nötr-Odak", "tone": "sakin, odaklı, modern", "overlay": "#374151", "accent": "#6B7280"},
+    4: {"label": "Temkinli", "tone": "dikkatli, kontrollü, uyanık", "overlay": "#4B2E1F", "accent": "#EE763A"},
+    5: {"label": "Uyarı", "tone": "yüksek kontrast, alarm değil ama net uyarı", "overlay": "#3B1F1F", "accent": "#EE763A"},
+}
+
+POSITIVE_WORDS = {
+    "pozitif", "uyum", "destek", "rahat", "akış", "fırsat", "başarı", "kazanç",
+    "iyimser", "umut", "güçlü", "ilerleme", "netlik", "bereket", "artış",
+}
+WARNING_WORDS = {
+    "dikkat", "risk", "kaçın", "temkin", "gerilim", "belirsiz", "stres", "zor",
+    "engel", "dalgalı", "hata", "tansiyon", "uyarı", "acele", "çatışma",
+}
+
+
+def _score_brief_mood(raw_html):
+    text = _strip_html_tags(raw_html).lower()
+    score = 0
+    for word in POSITIVE_WORDS:
+        score += text.count(word)
+    for word in WARNING_WORDS:
+        score -= text.count(word)
+
+    if score >= 6:
+        level = 1
+    elif score >= 3:
+        level = 2
+    elif score >= -1:
+        level = 3
+    elif score >= -4:
+        level = 4
+    else:
+        level = 5
+
+    profile = MOOD_PROFILES[level].copy()
+    profile["level"] = level
+    profile["score"] = score
+    return profile
+
+
+def _extract_image_payload(response):
+    parts = []
+    if getattr(response, "parts", None):
+        parts.extend(response.parts)
+
+    for candidate in getattr(response, "candidates", None) or []:
+        content = getattr(candidate, "content", None)
+        if content and getattr(content, "parts", None):
+            parts.extend(content.parts)
+
+    for part in parts:
+        inline = getattr(part, "inline_data", None)
+        if not inline:
+            continue
+        data = getattr(inline, "data", None)
+        if not data:
+            continue
+        mime = getattr(inline, "mime_type", None) or "image/png"
+        if isinstance(data, str):
+            try:
+                return base64.b64decode(data), mime
+            except Exception:
+                continue
+        if isinstance(data, (bytes, bytearray)):
+            return bytes(data), mime
+    return None, None
+
+
+def _image_extension_for_mime(mime):
+    if mime == "image/jpeg":
+        return "jpg"
+    if mime == "image/webp":
+        return "webp"
+    return "png"
+
+
+def _build_header_image_prompt(mood, raw_html, date_str):
+    themes = _extract_themes(raw_html, limit=5)
+    theme_text = ", ".join(themes) if themes else "astroloji, finans, hava, odak"
+    return f"""
+Türkçe sabah özeti için modern ve soyut bir kapak görseli üret.
+Tarih bağlamı: {date_str}
+Gün ruh hali: {mood['label']} (ton: {mood['tone']}).
+Temalar: {theme_text}.
+
+Kurallar:
+- Yatay oran: yaklaşık 3:1 (geniş banner kompozisyonu).
+- Görsel soyut olsun; fotoğrafik yüz/insan olmasın.
+- Yazı, harf, logo, watermark, sayı, ikon metni üretme.
+- Renk seti: #F6F6F7, #D0D3DC, #EE763A, #26B46D, #6EB6E8.
+- Kontrast yüksek ama göz yormayan, premium hissiyat.
+- Parlaklık ruh hali seviyesine göre ayarlansın.
+"""
+
+
+def _hero_image_public_url(image_path):
+    repo = os.environ.get("GITHUB_REPOSITORY") or "ustunfatih/morning-brief"
+    branch = os.environ.get("GITHUB_REF_NAME") or "main"
+    rel_path = image_path.replace(os.sep, "/")
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M%S")
+    return f"https://raw.githubusercontent.com/{repo}/{branch}/{rel_path}?v={stamp}"
+
+
+def _build_hero_image_markup(image_url, mood, date_str):
+    badge_style = (
+        "display:inline-block; margin:0 0 8px 0; font-size:12px; color:#FFFFFF; "
+        "background-color:#1F2933; border:1px solid #FFFFFF; "
+        "border-radius:8px; padding:4px 8px; line-height:1.25;"
+    )
+    title_style = (
+        "margin:0; font-size:30px; line-height:1.25; font-weight:800; color:#FFFFFF; "
+        "text-shadow:0 2px 8px rgba(0,0,0,0.55); mso-line-height-rule:exactly;"
+    )
+    subtitle_style = (
+        "margin:6px 0 0 0; font-size:13px; color:#F6F6F7; "
+        "text-shadow:0 1px 4px rgba(0,0,0,0.45); line-height:1.35; mso-line-height-rule:exactly;"
+    )
+    text_wrap_style = (
+        "display:inline-block; background-color:#1F2933; background-color:rgba(31,41,51,0.55); "
+        "padding:10px 12px; border-radius:10px;"
+    )
+
+    if not image_url:
+        return f"""
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+  <tr>
+    <td align="left" valign="bottom" style="height:220px; padding:18px; vertical-align:bottom; background-color:{FALLBACK_HERO_BG};">
+      <div style="{text_wrap_style}">
+        <p style="{badge_style}">📅 {date_str}</p>
+        <p style="{title_style}">Günaydın, Fatih.</p>
+        <p style="{subtitle_style}">📍 Doha, Katar · {mood['label']}</p>
+      </div>
+    </td>
+  </tr>
+</table>
+"""
+
+    background_style = (
+        f"height:220px; padding:18px; vertical-align:bottom; "
+        f"background-color:{mood['overlay']}; "
+        f"background-image:url('{image_url}'); background-size:cover; background-position:center center;"
+    )
+    return f"""
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+  <tr>
+    <td background="{image_url}" bgcolor="{mood['overlay']}" align="left" valign="bottom" style="{background_style}">
+      <!--[if gte mso 9]>
+      <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:680px;height:220px;">
+        <v:fill type="frame" src="{image_url}" color="{mood['overlay']}" />
+        <v:textbox inset="0,0,0,0">
+      <![endif]-->
+      <div style="{text_wrap_style}">
+        <p style="{badge_style}">📅 {date_str}</p>
+        <p style="{title_style}">Günaydın, Fatih.</p>
+        <p style="{subtitle_style}">📍 Doha, Katar · {mood['label']}</p>
+      </div>
+      <!--[if gte mso 9]>
+        </v:textbox>
+      </v:rect>
+      <![endif]-->
+    </td>
+  </tr>
+</table>
+"""
+
+
+def _generate_daily_header_image(client, raw_html, date_str, mood):
+    prompt = _build_header_image_prompt(mood, raw_html, date_str)
+    requested = os.environ.get("GEMINI_IMAGE_MODEL")
+    model_candidates = []
+    if requested:
+        model_candidates.append(requested)
+    model_candidates.extend([GEMINI_IMAGE_MODEL, "gemini-3.1-flash-image-preview"])
+    seen = set()
+    model_candidates = [m for m in model_candidates if not (m in seen or seen.add(m))]
+
+    for model_name in model_candidates:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=[prompt],
+            )
+            image_bytes, mime = _extract_image_payload(response)
+            if not image_bytes:
+                continue
+
+            os.makedirs(HEADER_IMAGE_DIR, exist_ok=True)
+            ext = _image_extension_for_mime(mime)
+            image_path = os.path.join(HEADER_IMAGE_DIR, f"header-latest.{ext}")
+
+            # Remove older format variants to keep the repo slim.
+            for stale_ext in ("png", "jpg", "webp"):
+                stale_path = os.path.join(HEADER_IMAGE_DIR, f"header-latest.{stale_ext}")
+                if stale_path != image_path and os.path.exists(stale_path):
+                    os.remove(stale_path)
+
+            with open(image_path, "wb") as img_file:
+                img_file.write(image_bytes)
+
+            print(f"🖼️ Üst görsel üretildi ({model_name}) -> {image_path}")
+            return _hero_image_public_url(image_path), model_name
+        except Exception as err:
+            print(f"⚠️ Üst görsel üretimi başarısız ({model_name}): {err}")
+
+    return "", ""
 
 def format_date_str(now):
     months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -507,7 +758,7 @@ def send_email(html_content, date_str):
     print(f"✅ Kimlik bilgileri bulundu. Gönderen: {EMAIL_USER} -> Alıcı: {EMAIL_TO}")
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"Morning Brief: {date_str}"
+    msg["Subject"] = f"Sabah Özeti: {date_str}"
     msg["From"] = EMAIL_USER
     msg["To"] = EMAIL_TO
 
@@ -550,11 +801,11 @@ def _weather_icon_class(code):
 
 
 WEATHER_ICON_IMAGES = {
-    "sunny": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2600.png", "Gunesli"),
-    "partly-cloudy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26c5.png", "Parcali bulutlu"),
+    "sunny": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2600.png", "Güneşli"),
+    "partly-cloudy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26c5.png", "Parçalı bulutlu"),
     "cloudy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2601.png", "Bulutlu"),
-    "rainy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f327.png", "Yagmurlu"),
-    "stormy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26c8.png", "Firtinali"),
+    "rainy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f327.png", "Yağmurlu"),
+    "stormy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26c8.png", "Fırtınalı"),
 }
 
 
@@ -686,9 +937,9 @@ def get_financial_data():
                 else:
                     week_str = ""
 
-                direction = "yukari" if change_pct >= 0 else "asagi"
+                direction = "yukarı" if change_pct >= 0 else "aşağı"
                 lines.append(
-                    f"  {symbol}: ${current:.2f} ({change_pct:+.2f}% {direction}){week_str} | Hacim: {hist['Volume'].iloc[-1]:,.0f}"
+                f"  {symbol}: ${current:.2f} ({change_pct:+.2f}% {direction}){week_str} | Hacim: {hist['Volume'].iloc[-1]:,.0f}"
                 )
             except Exception as e:
                 lines.append(f"  {symbol}: Hata - {str(e)[:50]}")
@@ -778,7 +1029,7 @@ def get_planetary_data(now_qatar):
         moon_deg = transit.moon.position
 
         return f"""
-GERÇEK GEZEGENSEl VERİLER (Swiss Ephemeris - bugünkü hesaplama):
+GERÇEK GEZEGENSEL VERİLER (Swiss Ephemeris - bugünkü hesaplama):
 
 GÜNCEL TRANSİT POZİSYONLARI (Doha, {now_qatar.strftime('%d.%m.%Y %H:%M')}):
 {transit_text}
@@ -793,25 +1044,25 @@ AY BİLGİSİ:
 """
     except Exception as e:
         print(f"⚠️ Ephemeris hesaplama hatası: {e}")
-        return "\n(Ephemeris verisi hesaplanamadı, genel astroloji bilgisi kullan.)\n"
+        return "\n(Efemeris verisi hesaplanamadı, genel astroloji bilgisi kullan.)\n"
 
 
 def generate_daily_brief():
     if not API_KEY:
-        print("Error: GEMINI_API_KEY (or GOOGLE_API_KEY) not found.")
+        print("Hata: GEMINI_API_KEY (veya GOOGLE_API_KEY) bulunamadı.")
         return
 
     _validate_html_template_placeholders()
 
     client = genai.Client(api_key=API_KEY)
-    print(f"Using Gemini model: {GEMINI_MODEL}")
+    print(f"Kullanılan Gemini modeli: {GEMINI_MODEL}")
     
     # Time Calc
     now_qatar = get_current_time_qatar()
     date_str = format_date_str(now_qatar)
     gen_time_str = now_qatar.strftime("%H:%M:%S")
 
-    print(f"Generating brief for: {date_str}...")
+    print(f"Özet oluşturuluyor: {date_str}...")
 
     # Compute real planetary positions
     planetary_data = get_planetary_data(now_qatar)
@@ -829,14 +1080,14 @@ def generate_daily_brief():
     finance_time_display = _format_time_for_display(datetime.datetime.fromisoformat(finance_latest_ts), "US/Eastern")
 
     if EMAIL_RENDER_MODE != "email-safe":
-        print(f"⚠️ Unsupported EMAIL_RENDER_MODE='{EMAIL_RENDER_MODE}'. Falling back to email-safe.")
+        print(f"⚠️ Desteklenmeyen EMAIL_RENDER_MODE='{EMAIL_RENDER_MODE}'. email-safe moduna dönülüyor.")
     if THEME_PROFILE != "offwhite-slate":
-        print(f"⚠️ Unsupported THEME_PROFILE='{THEME_PROFILE}'. Falling back to offwhite-slate.")
-    print(f"Email render mode: {EMAIL_RENDER_MODE} | Theme: {THEME_PROFILE}")
+        print(f"⚠️ Desteklenmeyen THEME_PROFILE='{THEME_PROFILE}'. offwhite-slate profiline dönülüyor.")
+    print(f"E-posta render modu: {EMAIL_RENDER_MODE} | Tema: {THEME_PROFILE}")
 
     # --- ENRICHED PROMPT WITH REAL EPHEMERIS DATA ---
     prompt = f"""
-    Sen Fatih için "Morning Brief" hazırlayan, zeki ama net bir astroloji ve finans asistanısın.
+    Sen Fatih için "Sabah Özeti" hazırlayan, zeki ama net bir astroloji ve finans asistanısın.
 
     PARAMETRELER:
     - Tarih: {date_str}
@@ -851,7 +1102,7 @@ def generate_daily_brief():
       weather-card, weather-icon-wrap, weather-summary, weather-periods, weather-period,
       decision-grid, decision-box, d-icon, d-label, d-val, d-good, d-bad, d-neutral,
       bullet-list, finance-list, ticker-pill, source-link.
-    - No script, no svg, no canvas, no iframe, no form, no style tag.
+    - script, svg, canvas, iframe, form ve style etiketi kullanma.
     - CSS custom property kullanma.
     - Flex veya grid layout kullanma.
     - Tek kolon, email-uyumlu sade bloklar kullan.
@@ -863,8 +1114,8 @@ def generate_daily_brief():
     {weather_data}
 
     PORTFÖY:
-    - Whitelist: QQQI, FDVV, SCHD, SCHG, IAUI, SLV
-    - Blacklist: YMAG, TQQQ, GLDW
+    - İzinli liste: QQQI, FDVV, SCHD, SCHG, IAUI, SLV
+    - Hariç tutulanlar: YMAG, TQQQ, GLDW
 
     ASTROLOJİ KAYNAKLARI:
     {ASTROLOGER_SOURCES}
@@ -872,8 +1123,8 @@ def generate_daily_brief():
 
     BÖLÜMLER:
     1) ODAK (id=odak):
-       - Bir motto, 3 kelime kuralı, kısa mood geçiş analizi.
-       - card içinde olsun.
+       - Bir motto, 3 kelime kuralı, kısa ruh hali geçiş analizi.
+       - kart bloğu (card) içinde olsun.
 
     2) HAVA (id=hava):
        - Şu yapıyı kullan:
@@ -897,7 +1148,7 @@ def generate_daily_brief():
        - 3-4 paragraf + 3 maddelik kısa liste.
        - Etiketler: tag-blue/tag-gold/tag-red/tag-green/tag-lavender.
        - Kaynak bölümü ekle; en az 5 link (3 Türk + 2 uluslararası), class=source-link.
-       - Bir "Astro-Bilişsel Uyarı" card'ı ekle (açık mavi-slate tonunda).
+       - Bir "Astro-Bilişsel Uyarı" kartı ekle (açık mavi-slate tonunda).
 
     4) KARAR (id=karar):
        - En iyi, nötr, kaçın alanları.
@@ -921,6 +1172,7 @@ def generate_daily_brief():
     - Yalnızca saf HTML döndür.
     - <html>, <head>, <body> açma.
     - Uydurma finans veya astro veri üretme.
+    - Türkçe karakterleri ve yazım kurallarını doğru kullan.
     - Bölümler kısa, net, email-uyumlu olsun.
     """
 
@@ -929,19 +1181,19 @@ def generate_daily_brief():
     except Exception as err:
         err_text = str(err)
         if "no longer available to new users" in err_text or ("NOT_FOUND" in err_text and "models/" in err_text):
-            print(f"\nGemini model '{GEMINI_MODEL}' is not available for this key/project.")
-            print("Fix:")
-            print("1) Set GEMINI_MODEL to a currently available model (for example: gemini-2.5-flash).")
-            print("2) Re-run after updating the env variable/secret.")
+            print(f"\nGemini modeli '{GEMINI_MODEL}' bu anahtar/proje için kullanılamıyor.")
+            print("Çözüm:")
+            print("1) GEMINI_MODEL değişkenini kullanılabilir güncel bir modelle ayarla (örnek: gemini-2.5-flash).")
+            print("2) Ortam değişkeni/secret güncelledikten sonra workflow'u tekrar çalıştır.")
         if (
             "PERMISSION_DENIED" in err_text
             and "generativelanguage.googleapis.com" in err_text
         ) or "SERVICE_DISABLED" in err_text:
-            print("\nGemini request failed: API key project is not enabled for Generative Language API.")
-            print("Fix:")
-            print("1) Enable Generative Language API on the same project as the API key.")
-            print("2) Rotate GitHub Actions secret GEMINI_API_KEY with the new key.")
-            print("3) Wait 2-10 minutes for propagation, then re-run the workflow.")
+            print("\nGemini isteği başarısız: API anahtarının bağlı olduğu projede Generative Language API etkin değil.")
+            print("Çözüm:")
+            print("1) API anahtarının bulunduğu aynı projede Generative Language API'yi etkinleştir.")
+            print("2) GitHub Actions içindeki GEMINI_API_KEY secret değerini yeni anahtarla güncelle.")
+            print("3) Yayılım için 2-10 dakika bekleyip workflow'u tekrar çalıştır.")
         raise
     
     # Temizlik
@@ -949,11 +1201,21 @@ def generate_daily_brief():
     raw_html = _sanitize_html(raw_html)
     raw_html = _escape_template_like_sequences(raw_html)
     raw_html = _ensure_required_sections(raw_html)
+
+    mood = _score_brief_mood(raw_html)
+    print(f"🧠 Özet ruh hali seviyesi: {mood['level']} ({mood['label']}) | skor={mood['score']}")
+    hero_image_url, image_model_used = _generate_daily_header_image(client, raw_html, date_str, mood)
+    if hero_image_url:
+        print(f"🖼️ Üst görsel URL'si hazırlandı ({image_model_used})")
+    else:
+        print("⚠️ Üst görsel kullanılamadı, yedek hero bloğu kullanılıyor.")
+    hero_image_markup = _build_hero_image_markup(hero_image_url, mood, date_str)
     
     # Template Birleştirme
     final_html = HTML_TEMPLATE.substitute(
         date_string=date_str,
         content_body=raw_html,
+        hero_image_markup=hero_image_markup,
         gen_time=gen_time_str,
         weather_time=weather_time_display,
         finance_time=finance_time_display,

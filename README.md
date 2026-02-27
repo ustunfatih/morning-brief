@@ -43,6 +43,7 @@ If you want to pin a specific model for CI:
 Copy `.env.example` to `.env` and set:
 - `GEMINI_API_KEY=...` (or `GOOGLE_API_KEY=...`)
 - `GEMINI_MODEL=gemini-2.5-flash` (optional)
+- `GEMINI_IMAGE_MODEL=gemini-2.5-flash-image` (optional, hero image)
 - `EMAIL_RENDER_MODE=email-safe` (optional)
 - `THEME_PROFILE=offwhite-slate` (optional)
 - `EMAIL_HTML_BUDGET_BYTES=102400` (optional warning threshold)
