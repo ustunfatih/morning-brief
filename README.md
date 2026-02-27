@@ -42,6 +42,7 @@ If you want to pin a specific model for CI:
 
 To include daily Todoist tasks in the brief:
 - Add repository secret: `TODOIST_API_TOKEN`
+  - Use raw token only (do not prefix with `Bearer` and do not wrap in quotes)
 - Add repository variables (optional):
   - `TODOIST_FILTER` (example: `overdue | today`)
   - `TODOIST_MAX_ITEMS` (example: `8`)

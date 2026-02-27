@@ -35,6 +35,44 @@ def _env_int(name, default, minimum=None, maximum=None):
         value = maximum
     return value
 
+def _env_str(name, default=""):
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return default
+    return str(raw_value).strip()
+
+def _strip_wrapping_quotes(value):
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        return value[1:-1].strip()
+    return value
+
+def _normalize_todoist_token(raw_token):
+    token = _strip_wrapping_quotes((raw_token or "").strip())
+    if token.lower().startswith("bearer "):
+        token = token[7:].strip()
+    if token and set(token) == {"*"}:
+        return ""
+    return token
+
+def _normalize_todoist_filter(raw_filter, default_filter):
+    value = _strip_wrapping_quotes((raw_filter or "").strip())
+    return value or default_filter
+
+def _safe_int(value, default):
+    try:
+        return int(str(value).strip())
+    except Exception:
+        return default
+
+
+class TodoistAPIError(RuntimeError):
+    def __init__(self, phase, path, status=None, details=""):
+        self.phase = phase
+        self.path = path
+        self.status = status
+        self.details = details
+        super().__init__(f"Todoist[{phase}] {path} status={status}: {details}")
+
 # --- CONFIGURATION ---
 API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
@@ -48,8 +86,9 @@ CACHE_DIR = ".cache"
 HEADER_IMAGE_DIR = os.path.join("assets", "headers")
 HEADER_IMAGE_FILE = "header-latest.png"
 FALLBACK_HERO_BG = "#374151"
-TODOIST_API_TOKEN = os.environ.get("TODOIST_API_TOKEN")
-TODOIST_FILTER = os.environ.get("TODOIST_FILTER") or "overdue | today"
+TODOIST_DEFAULT_FILTER = "overdue | today"
+TODOIST_API_TOKEN = _normalize_todoist_token(_env_str("TODOIST_API_TOKEN", ""))
+TODOIST_FILTER = _normalize_todoist_filter(_env_str("TODOIST_FILTER", TODOIST_DEFAULT_FILTER), TODOIST_DEFAULT_FILTER)
 TODOIST_MAX_ITEMS = _env_int("TODOIST_MAX_ITEMS", 8, minimum=1, maximum=20)
 TODOIST_CACHE_TTL_MIN = _env_int("TODOIST_CACHE_TTL_MIN", 10, minimum=1, maximum=180)
 TODOIST_API_BASE = "https://api.todoist.com/rest/v2"
@@ -1026,9 +1065,9 @@ def _parse_iso_datetime(value):
         return None
 
 
-def _todoist_request(path, params=None, allow_retry=True):
+def _todoist_request(path, params=None, allow_retry=True, phase="request"):
     if not TODOIST_API_TOKEN:
-        raise RuntimeError("TODOIST_API_TOKEN bulunamadı.")
+        raise TodoistAPIError(phase=phase, path=path, status=401, details="TODOIST_API_TOKEN bulunamadı veya geçersiz.")
 
     query = urllib.parse.urlencode(params or {})
     url = f"{TODOIST_API_BASE}{path}"
@@ -1050,14 +1089,14 @@ def _todoist_request(path, params=None, allow_retry=True):
     except urllib.error.HTTPError as err:
         body = err.read().decode("utf-8", errors="ignore")
         if err.code == 429 and allow_retry:
-            wait_seconds = int(err.headers.get("Retry-After") or "2")
+            wait_seconds = _safe_int(err.headers.get("Retry-After"), 2)
             wait_seconds = max(1, min(wait_seconds, 15))
-            print(f"⚠️ Todoist hız sınırı: {wait_seconds} sn sonra tekrar denenecek.")
+            print(f"⚠️ Todoist[phase={phase}] hız sınırı ({path}): {wait_seconds} sn sonra tekrar denenecek.")
             time.sleep(wait_seconds)
-            return _todoist_request(path, params=params, allow_retry=False)
-        raise RuntimeError(f"Todoist API HTTP {err.code}: {body[:180]}")
+            return _todoist_request(path, params=params, allow_retry=False, phase=phase)
+        raise TodoistAPIError(phase=phase, path=path, status=err.code, details=body[:180])
     except Exception as err:
-        raise RuntimeError(f"Todoist API isteği başarısız: {err}")
+        raise TodoistAPIError(phase=phase, path=path, details=str(err))
 
 
 def get_todoist_data(now_qatar):
@@ -1068,64 +1107,132 @@ def get_todoist_data(now_qatar):
 
     fresh_cache = _load_cache("todoist.json", ttl_minutes=TODOIST_CACHE_TTL_MIN)
     if fresh_cache:
-        return fresh_cache["data"]["text"], fresh_cache["data"]["fetched_at"]
+        cached_data = fresh_cache.get("data", {}) if isinstance(fresh_cache, dict) else {}
+        if cached_data.get("text") and cached_data.get("fetched_at"):
+            return cached_data["text"], cached_data["fetched_at"]
+        print("⚠️ Todoist[phase=cache_read] güncel önbellek yapısı bozuk, canlı veriye geçiliyor.")
 
     stale_cache = _load_cache_any("todoist.json")
     priority_map = {4: "P1", 3: "P2", 2: "P3", 1: "P4"}
     qatar_tz = pytz.timezone(TIMEZONE)
+    token_preview = f"{TODOIST_API_TOKEN[:4]}...{TODOIST_API_TOKEN[-3:]}" if len(TODOIST_API_TOKEN) >= 8 else "kısa-token"
+    print(f"ℹ️ Todoist[phase=init] entegrasyon aktif. Token: {token_preview}, filtre: '{TODOIST_FILTER}'")
 
     try:
-        tasks = _todoist_request("/tasks", params={"filter": TODOIST_FILTER})
-        projects = _todoist_request("/projects")
-        project_map = {str(item.get("id")): item.get("name", "Genel") for item in projects if isinstance(item, dict)}
+        filter_candidates = []
+        for item in [TODOIST_FILTER, TODOIST_DEFAULT_FILTER, "today"]:
+            candidate = (item or "").strip()
+            if candidate and candidate not in filter_candidates:
+                filter_candidates.append(candidate)
+
+        tasks = None
+        selected_filter = None
+        last_task_error = None
+        for candidate_filter in filter_candidates:
+            try:
+                tasks = _todoist_request(
+                    "/tasks",
+                    params={"filter": candidate_filter},
+                    phase="tasks_fetch",
+                )
+                selected_filter = candidate_filter
+                break
+            except TodoistAPIError as err:
+                last_task_error = err
+                if err.status == 400:
+                    print(
+                        f"⚠️ Todoist[phase=tasks_fetch] filtre geçersiz ('{candidate_filter}'). "
+                        "Alternatif filtre deneniyor."
+                    )
+                    continue
+                raise
+
+        if tasks is None:
+            raise last_task_error or TodoistAPIError(
+                phase="tasks_fetch",
+                path="/tasks",
+                details="Görev listesi alınamadı.",
+            )
+
+        print(f"✅ Todoist[phase=tasks_fetch] {len(tasks)} görev alındı. Kullanılan filtre: '{selected_filter}'")
+
+        project_map = {}
+        try:
+            projects = _todoist_request("/projects", phase="projects_fetch")
+            project_map = {
+                str(item.get("id")): item.get("name", "Genel")
+                for item in projects
+                if isinstance(item, dict)
+            }
+        except TodoistAPIError as err:
+            print(
+                f"⚠️ Todoist[phase=projects_fetch] proje adları alınamadı "
+                f"(status={err.status}). Görevler proje kimliğiyle devam edecek."
+            )
 
         normalized = []
         for task in tasks:
-            if not isinstance(task, dict):
+            try:
+                if not isinstance(task, dict):
+                    continue
+                content = (task.get("content") or "").strip()
+                if not content:
+                    continue
+                if len(content) > 120:
+                    content = content[:117] + "..."
+
+                due = task.get("due") or {}
+                due_text = "Tarihsiz"
+                due_dt = None
+                due_date = None
+                is_overdue = False
+                due_sort = float("inf")
+
+                if due.get("datetime"):
+                    due_dt = _parse_iso_datetime(due.get("datetime"))
+                    if due_dt:
+                        due_local = due_dt.astimezone(qatar_tz)
+                        due_text = due_local.strftime("%d.%m %H:%M")
+                        is_overdue = due_local < now_qatar
+                        due_sort = due_local.timestamp()
+                elif due.get("date"):
+                    try:
+                        due_date = datetime.date.fromisoformat(due.get("date"))
+                        due_text = due_date.strftime("%d.%m")
+                        is_overdue = due_date < now_qatar.date()
+                        due_midday = qatar_tz.localize(datetime.datetime(
+                            due_date.year, due_date.month, due_date.day, 12, 0
+                        ))
+                        due_sort = due_midday.timestamp()
+                    except Exception:
+                        due_text = due.get("date")
+
+                priority_num = _safe_int(task.get("priority"), 1)
+                project_id = str(task.get("project_id") or "")
+                default_project_label = f"Proje {project_id}" if project_id else "Genel"
+                normalized.append({
+                    "content": content,
+                    "priority": priority_map.get(priority_num, "P4"),
+                    "priority_num": priority_num,
+                    "project": project_map.get(project_id, default_project_label),
+                    "due_text": due_text,
+                    "due_sort": due_sort,
+                    "is_overdue": is_overdue,
+                    "has_time": bool(due_dt and due_dt.astimezone(qatar_tz).date() == now_qatar.date()),
+                })
+            except Exception as err:
+                print(f"⚠️ Todoist[phase=normalize] bir görev atlandı: {err}")
                 continue
-            content = (task.get("content") or "").strip()
-            if not content:
-                continue
-            if len(content) > 120:
-                content = content[:117] + "..."
 
-            due = task.get("due") or {}
-            due_text = "Tarihsiz"
-            due_dt = None
-            due_date = None
-            is_overdue = False
-
-            if due.get("datetime"):
-                due_dt = _parse_iso_datetime(due.get("datetime"))
-                if due_dt:
-                    due_local = due_dt.astimezone(qatar_tz)
-                    due_text = due_local.strftime("%d.%m %H:%M")
-                    is_overdue = due_local < now_qatar
-            elif due.get("date"):
-                try:
-                    due_date = datetime.date.fromisoformat(due.get("date"))
-                    due_text = due_date.strftime("%d.%m")
-                    is_overdue = due_date < now_qatar.date()
-                except Exception:
-                    due_text = due.get("date")
-
-            normalized.append({
-                "content": content,
-                "priority": priority_map.get(int(task.get("priority") or 1), "P4"),
-                "project": project_map.get(str(task.get("project_id")), "Genel"),
-                "due_text": due_text,
-                "is_overdue": is_overdue,
-                "has_time": bool(due_dt and due_dt.astimezone(qatar_tz).date() == now_qatar.date()),
-            })
-
-        normalized.sort(key=lambda item: (0 if item["is_overdue"] else 1, item["priority"], item["due_text"]))
+        normalized.sort(key=lambda item: (0 if item["is_overdue"] else 1, item["due_sort"], -item["priority_num"]))
+        total_matched = len(normalized)
         normalized = normalized[:max(1, TODOIST_MAX_ITEMS)]
 
         overdue_count = sum(1 for item in normalized if item["is_overdue"])
         timed_today_count = sum(1 for item in normalized if item["has_time"])
 
         summary = (
-            f"  Toplam görev: {len(normalized)} | "
+            f"  Toplam görev (filtre): {total_matched} | Gösterilen: {len(normalized)} | "
             f"Bugün saatli etkinlik: {timed_today_count} | "
             f"Gecikmiş: {overdue_count}"
         )
@@ -1145,15 +1252,30 @@ def get_todoist_data(now_qatar):
         _save_cache("todoist.json", {"text": text, "fetched_at": fetched_at})
         return text, fetched_at
     except Exception as err:
-        err_text = str(err)
-        if "HTTP 401" in err_text or "HTTP 403" in err_text:
-            print("⚠️ Todoist erişimi reddedildi: API token geçersiz veya izin yok.")
+        if isinstance(err, TodoistAPIError):
+            if err.status in (401, 403):
+                print(
+                    f"⚠️ Todoist[phase={err.phase}] erişim reddedildi (status={err.status}). "
+                    "Token değeri düz metin olmalı; 'Bearer ' öneki veya tırnak içermemeli."
+                )
+            elif err.status == 400:
+                print(
+                    f"⚠️ Todoist[phase={err.phase}] geçersiz istek (status=400). "
+                    f"Filtreyi kontrol et: '{TODOIST_FILTER}'."
+                )
+            elif err.status in (429, 500, 502, 503, 504):
+                print(
+                    f"⚠️ Todoist[phase={err.phase}] geçici servis hatası (status={err.status}). "
+                    "Bir sonraki çalıştırmada otomatik düzelebilir."
+                )
+            else:
+                print(f"⚠️ Todoist[phase={err.phase}] hata (status={err.status}): {err.details}")
         else:
-            print(f"⚠️ Todoist veri hatası: {err}")
+            print(f"⚠️ Todoist[phase=unknown] veri hatası: {err}")
         if stale_cache and isinstance(stale_cache, dict):
             cached_data = stale_cache.get("data", {})
             if cached_data.get("text") and cached_data.get("fetched_at"):
-                print("ℹ️ Todoist için son geçerli önbellek kullanılıyor.")
+                print("ℹ️ Todoist[phase=cache_fallback] son geçerli önbellek kullanılıyor.")
                 return cached_data["text"], cached_data["fetched_at"]
         return "(Todoist verisi alınamadı.)", now_utc_iso
 
