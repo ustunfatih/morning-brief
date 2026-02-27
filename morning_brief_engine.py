@@ -18,12 +18,29 @@ from string import Template
 from kerykeion import AstrologicalSubjectFactory
 import yfinance as yf
 
+def _env_int(name, default, minimum=None, maximum=None):
+    raw_value = os.environ.get(name)
+    if raw_value is None or str(raw_value).strip() == "":
+        return default
+    try:
+        value = int(str(raw_value).strip())
+    except ValueError:
+        print(f"⚠️ {name} geçersiz ('{raw_value}'). Varsayılan değer ({default}) kullanılacak.")
+        return default
+    if minimum is not None and value < minimum:
+        print(f"⚠️ {name} çok düşük ({value}). Alt sınır ({minimum}) kullanılacak.")
+        value = minimum
+    if maximum is not None and value > maximum:
+        print(f"⚠️ {name} çok yüksek ({value}). Üst sınır ({maximum}) kullanılacak.")
+        value = maximum
+    return value
+
 # --- CONFIGURATION ---
 API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
 EMAIL_RENDER_MODE = os.environ.get("EMAIL_RENDER_MODE") or "email-safe"
 THEME_PROFILE = os.environ.get("THEME_PROFILE") or "offwhite-slate"
-EMAIL_HTML_BUDGET_BYTES = int(os.environ.get("EMAIL_HTML_BUDGET_BYTES") or "102400")
+EMAIL_HTML_BUDGET_BYTES = _env_int("EMAIL_HTML_BUDGET_BYTES", 102400, minimum=16384, maximum=500000)
 GEMINI_IMAGE_MODEL = os.environ.get("GEMINI_IMAGE_MODEL") or "gemini-2.5-flash-image"
 TIMEZONE = "Asia/Qatar"
 USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, İstanbul"
@@ -33,8 +50,8 @@ HEADER_IMAGE_FILE = "header-latest.png"
 FALLBACK_HERO_BG = "#374151"
 TODOIST_API_TOKEN = os.environ.get("TODOIST_API_TOKEN")
 TODOIST_FILTER = os.environ.get("TODOIST_FILTER") or "overdue | today"
-TODOIST_MAX_ITEMS = int(os.environ.get("TODOIST_MAX_ITEMS") or "8")
-TODOIST_CACHE_TTL_MIN = int(os.environ.get("TODOIST_CACHE_TTL_MIN") or "10")
+TODOIST_MAX_ITEMS = _env_int("TODOIST_MAX_ITEMS", 8, minimum=1, maximum=20)
+TODOIST_CACHE_TTL_MIN = _env_int("TODOIST_CACHE_TTL_MIN", 10, minimum=1, maximum=180)
 TODOIST_API_BASE = "https://api.todoist.com/rest/v2"
 
 # Fatih's natal chart coordinates (Istanbul, Fatih district)
