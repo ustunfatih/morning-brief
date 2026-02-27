@@ -43,6 +43,9 @@ If you want to pin a specific model for CI:
 Copy `.env.example` to `.env` and set:
 - `GEMINI_API_KEY=...` (or `GOOGLE_API_KEY=...`)
 - `GEMINI_MODEL=gemini-2.5-flash` (optional)
+- `EMAIL_RENDER_MODE=email-safe` (optional)
+- `THEME_PROFILE=offwhite-slate` (optional)
+- `EMAIL_HTML_BUDGET_BYTES=102400` (optional warning threshold)
 - `EMAIL_USER=...`
 - `EMAIL_PASS=...`
 - `EMAIL_TO=...`
@@ -50,3 +53,22 @@ Copy `.env.example` to `.env` and set:
 ### 5) Re-run workflow
 
 Run `Generate Morning Brief` manually from GitHub Actions (`workflow_dispatch`) once after rotating the key.
+
+## Email QA Matrix (Visual Consistency)
+
+When changing email design, validate the same generated `index.html` in:
+- Apple Mail (iOS)
+- Gmail app (iOS)
+- Gmail app (Android)
+- Outlook app (iOS)
+- Outlook app (Android)
+- Outlook desktop/web
+
+Checkpoints:
+- Header text/date spacing and off-white background consistency
+- Card borders/padding and tag colors
+- Weather icon image loads with fixed size (`40x40`)
+- Finance pills and list readability
+- Links and anchor tap behavior
+- Plain-text fallback readability (non-HTML clients)
+- Payload size warning does not exceed budget (`EMAIL_HTML_BUDGET_BYTES`, default `102400`)

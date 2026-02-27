@@ -5,6 +5,8 @@ import smtplib
 import json
 import urllib.request
 import urllib.parse
+import re
+import html
 from html.parser import HTMLParser
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -16,6 +18,9 @@ import yfinance as yf
 # --- CONFIGURATION ---
 API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
+EMAIL_RENDER_MODE = os.environ.get("EMAIL_RENDER_MODE") or "email-safe"
+THEME_PROFILE = os.environ.get("THEME_PROFILE") or "offwhite-slate"
+EMAIL_HTML_BUDGET_BYTES = int(os.environ.get("EMAIL_HTML_BUDGET_BYTES") or "102400")
 TIMEZONE = "Asia/Qatar"
 USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, Istanbul"
 CACHE_DIR = ".cache"
@@ -61,434 +66,187 @@ EMAIL_USER = os.environ.get("EMAIL_USER")
 EMAIL_PASS = os.environ.get("EMAIL_PASS")
 EMAIL_TO = os.environ.get("EMAIL_TO")
 
-# --- THE HTML TEMPLATE (RESPONSIVE HEADER FIXED) ---
+# --- THE HTML TEMPLATE (EMAIL-SAFE, TABLE-FIRST) ---
 HTML_TEMPLATE = Template("""
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- CACHE BUSTING -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Morning Brief | Fatih</title>
     <style>
-        :root {
-            --bg-body: #FDF6EC; --bg-card: #FFFFFF; --bg-card-highlight: #FFF8F0;
-            --text-main: #3D3D3D; --text-muted: #7A7A7A;
-            --accent-primary: #E8A87C; --accent-secondary: #A8D8EA;
-            --accent-danger: #F3A6A6; --accent-success: #A8E6CF;
-            --accent-lavender: #C3B1E1;
-            --border-radius: 16px;
-            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --shadow-card: 0 6px 18px rgba(31, 25, 10, 0.08);
-            --border-light: #EDE3D7;
-            --text-base: 0.95rem;
-            --text-small: 0.8rem;
-            --text-title: 1.15rem;
-            --text-hero: 1.9rem;
-        }
-
-        /* Reset & Base */
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: var(--font-stack);
-            margin: 0;
-            padding: 0;
-            line-height: 1.65;
-            font-size: var(--text-base);
-            min-height: 100vh;
-        }
-
-        /* Layout Container */
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 0 0 24px 0;
-        }
-
-        /* Header Graphic - RESPONSIVE */
-        .header-wrapper {
-            background-color: var(--bg-body);
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
-        .header-graphic {
-            width: 100%;
-            max-width: 480px;
-            height: 180px;
-            background: linear-gradient(135deg, #FFF1E6 0%, #E8F4FD 50%, #F3E8FF 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            border-bottom: 1px solid var(--border-light);
-            border-radius: 0 0 24px 24px;
-        }
-
-        .header-content {
-            position: absolute;
-            bottom: 18px;
-            left: 15px;
-            z-index: 2;
-        }
-        .date-badge {
-            background: rgba(232, 168, 124, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-size: var(--text-small);
-            color: #C07A50;
-            font-weight: 600;
-            display: inline-block;
-            margin-bottom: 5px;
-        }
-        h1 { margin: 0; font-size: var(--text-hero); font-weight: 800; letter-spacing: -0.6px; color: #3D3D3D; }
-
-        /* Mood Band - thin decorative strip */
-        .mood-band {
-            height: 6px;
-            width: 100%;
-            background: linear-gradient(90deg, var(--accent-lavender) 0%, var(--accent-secondary) 35%, var(--accent-success) 65%, var(--accent-primary) 100%);
-            margin: 0;
-            border: none;
-        }
-
-        /* Navigation (TOC) */
-        .toc-scroller {
-            position: sticky;
-            top: 0;
-            background: rgba(253, 246, 236, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 100;
-            padding: 10px 0;
-            white-space: nowrap;
-            overflow-x: auto;
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            scrollbar-width: none;
-        }
-        .toc-progress {
-            position: sticky;
-            top: 46px;
-            height: 3px;
-            background: rgba(232, 168, 124, 0.15);
-            z-index: 99;
-        }
-        .toc-progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            transition: width 0.1s linear;
-        }
-        .toc-scroller::-webkit-scrollbar { display: none; }
-        .toc-link {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 20px;
-            background: var(--bg-card);
-            transition: all 0.2s;
-            border: 1px solid var(--border-light);
-        }
-        .toc-link:hover, .toc-link.active {
-            color: #FFFFFF;
-            background: var(--accent-primary);
-            border-color: var(--accent-primary);
-        }
-        .toc-link:focus-visible {
-            outline: 2px solid #C07A50;
-            outline-offset: 2px;
-        }
-
-        /* Sections */
-        .section-wrapper { padding: 12px 15px 0 15px; scroll-margin-top: 72px; }
-
-        /* Cards */
-        .card {
-            background-color: var(--bg-card);
-            border-radius: var(--border-radius);
-            padding: 18px;
-            margin-bottom: 12px;
-            border: 1px solid var(--border-light);
-            box-shadow: var(--shadow-card);
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        .card-title {
-            font-size: 1rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .tag {
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            padding: 4px 9px;
-            border-radius: 8px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-        .tag-blue { background: rgba(168, 216, 234, 0.22); color: #5B9BB5; border: 1px solid rgba(168, 216, 234, 0.35); }
-        .tag-gold { background: rgba(232, 168, 124, 0.22); color: #C07A50; border: 1px solid rgba(232, 168, 124, 0.35); }
-        .tag-red { background: rgba(243, 166, 166, 0.22); color: #C07070; border: 1px solid rgba(243, 166, 166, 0.35); }
-        .tag-green { background: rgba(168, 230, 207, 0.22); color: #5DAE8B; border: 1px solid rgba(168, 230, 207, 0.35); }
-        .tag-lavender { background: rgba(195, 177, 225, 0.22); color: #8B72B2; border: 1px solid rgba(195, 177, 225, 0.35); }
-
-        /* Typography & Lists */
-        p { margin-bottom: 12px; font-size: var(--text-base); color: #555; }
-        p:last-child { margin-bottom: 0; }
-        h2, h3, h4 { font-size: var(--text-title); margin: 0 0 8px 0; }
-        ul.bullet-list { list-style: none; padding: 0; margin: 0; }
-        ul.bullet-list li {
-            position: relative;
-            padding-left: 18px;
-            margin-bottom: 8px;
-            font-size: var(--text-base);
-            color: #4A4A4A;
-        }
-        ul.bullet-list li::before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: var(--accent-secondary);
-            font-weight: bold;
-        }
-
-        /* Weather Card */
-        .weather-card {
-            background: linear-gradient(135deg, #E8F4FD 0%, #F0EAFF 100%);
-            border-radius: var(--border-radius);
-            padding: 18px;
-            margin-bottom: 12px;
-            border: 1px solid #D4E8F0;
-            box-shadow: var(--shadow-card);
-            position: relative;
-        }
-        .weather-card .weather-icon-wrap {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 10px;
-        }
-        .weather-card .weather-icon-wrap svg {
-            flex-shrink: 0;
-        }
-        .weather-card .weather-summary {
-            font-size: var(--text-base);
-            color: #4A4A4A;
-        }
-        .weather-card .weather-summary strong {
-            color: #3D3D3D;
-        }
-        .weather-periods {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .weather-period {
-            background: rgba(255,255,255,0.7);
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
-            font-size: var(--text-base);
-            color: #4A4A4A;
-            min-height: 84px;
-            line-height: 1.45;
-        }
-        .weather-period strong {
-            display: block;
-            font-size: var(--text-small);
-            color: var(--text-muted);
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        /* Decision Map Grid */
-        .decision-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .decision-box {
-            background: var(--bg-card-highlight);
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border-light);
-            min-height: 84px;
-            line-height: 1.45;
-        }
-        .d-icon { font-size: 1.2rem; margin-bottom: 4px; }
-        .d-label { font-size: var(--text-small); color: var(--text-muted); font-weight: 600; }
-        .d-val { font-size: var(--text-base); font-weight: 700; margin-top: 2px; }
-        .d-good { color: var(--accent-success); }
-        .d-bad { color: var(--accent-danger); }
-        .d-neutral { color: var(--text-muted); }
-
-        /* Finance Pill */
-        .ticker-pill {
-            display: inline-block;
-            background: rgba(232, 168, 124, 0.12);
-            border: 1px solid rgba(232, 168, 124, 0.3);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: var(--text-base);
-            color: #C07A50;
-            margin-right: 4px;
-        }
-        ul.finance-list { list-style: none; padding: 0; margin: 0; }
-        ul.finance-list li {
-            background: rgba(255, 248, 240, 0.6);
-            border: 1px solid rgba(232, 223, 212, 0.7);
-            border-radius: 10px;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            font-size: var(--text-base);
-            color: #4A4A4A;
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 20px 15px;
-            font-size: var(--text-small);
-            color: var(--text-muted);
-            border-top: 1px solid var(--border-light);
-            margin-top: 12px;
-        }
-        .data-freshness {
-            font-size: 0.75rem;
-            color: #9A8E82;
-            margin-top: 6px;
-        }
-
-        .status-bar {
-            background: #F5EDE3;
-            color: #9A8E82;
-            font-size: 0.72rem;
-            text-align: right;
-            padding: 5px 10px;
-            font-family: monospace;
-            border-bottom: 1px solid var(--border-light);
-        }
-        .source-link {
-            color: #8B72B2;
-            text-decoration: none;
-            border-bottom: 1px solid rgba(139, 114, 178, 0.25);
-        }
-        .source-link:hover { border-bottom-color: rgba(139, 114, 178, 0.6); }
-
-        /* Responsive: wider on desktop */
-        @media (min-width: 768px) {
-            .container, .header-graphic { max-width: 600px; }
-        }
-        @media (min-width: 1024px) {
-            .container, .header-graphic { max-width: 680px; }
-        }
-        @media (max-width: 420px) {
-            body { font-size: 0.92rem; }
-            .weather-periods { grid-template-columns: 1fr; }
-            .decision-grid { grid-template-columns: 1fr; }
-            .card { padding: 16px; }
-        }
+      body, table, td, p, a, span, div {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      img {
+        display: block;
+        border: 0;
+        outline: none;
+        text-decoration: none;
+      }
+      p {
+        margin: 0 0 12px 0;
+      }
+      .section-wrapper {
+        padding: 0 0 12px 0;
+      }
+      .card {
+        background-color: #FFFFFF;
+        border: 1px solid #D0D3DC;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 10px;
+      }
+      .card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1F2933;
+        line-height: 1.4;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 8px;
+        letter-spacing: 0.3px;
+      }
+      .tag-blue { background-color: #EAF3FA; color: #2B7CAB; border: 1px solid #CDE4F4; }
+      .tag-gold { background-color: #FDEDE5; color: #C85826; border: 1px solid #F7CBB5; }
+      .tag-red { background-color: #FDEDE5; color: #C85826; border: 1px solid #F7CBB5; }
+      .tag-green { background-color: #E9F8F0; color: #1D8F56; border: 1px solid #BEE8D0; }
+      .tag-lavender { background-color: #EEF4F8; color: #4B5563; border: 1px solid #D0D3DC; }
+      .weather-card {
+        background-color: #F6F6F7;
+        border: 1px solid #D0D3DC;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+      .weather-summary {
+        font-size: 15px;
+        color: #1F2933;
+        line-height: 1.5;
+      }
+      .weather-period {
+        background-color: #FFFFFF;
+        border: 1px solid #D0D3DC;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #1F2933;
+        line-height: 1.45;
+      }
+      .decision-box {
+        background-color: #FFFFFF;
+        border: 1px solid #D0D3DC;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+      }
+      .d-good { color: #26B46D; }
+      .d-bad { color: #EE763A; }
+      .d-neutral { color: #4B5563; }
+      .ticker-pill {
+        display: inline-block;
+        background-color: #FDEDE5;
+        border: 1px solid #F7CBB5;
+        border-radius: 4px;
+        padding: 2px 8px;
+        color: #C85826;
+        font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 13px;
+      }
+      .bullet-list {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .bullet-list li {
+        margin: 0 0 8px 0;
+        color: #1F2933;
+      }
+      .finance-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .finance-list li {
+        background-color: #FFFFFF;
+        border: 1px solid #D0D3DC;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+      }
+      .source-link {
+        color: #2B7CAB;
+        text-decoration: underline;
+      }
     </style>
 </head>
-<body>
-    <div class="status-bar">SON GÜNCELLEME: $gen_time (Qatar)</div>
-
-    <!-- Header Wrapper to Center on Desktop -->
-    <div class="header-wrapper">
-        <header class="header-graphic">
-            <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.35;" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
-                <circle cx="20" cy="80" r="30" fill="#A8D8EA" />
-                <circle cx="80" cy="20" r="40" fill="#E8A87C" />
-                <circle cx="60" cy="70" r="20" fill="#C3B1E1" />
-                <path d="M0,50 Q50,0 100,50 T200,50" stroke="#A8E6CF" stroke-width="0.5" fill="none" />
-            </svg>
-            <div class="header-content">
-                <div class="date-badge">📅 $date_string</div>
-                <h1>Günaydın, Fatih.</h1>
-                <div style="font-size: var(--text-small); color: #7A7A7A; margin-top:4px;">📍 Doha, Katar</div>
-            </div>
-        </header>
+<body style="margin:0; padding:0; background-color:#F6F6F7; color:#1F2933;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent;">
+      Morning Brief: Astroloji, hava ve finans ozeti.
     </div>
 
-    <!-- Navigation -->
-    <nav class="toc-scroller">
-        <a href="#odak" class="toc-link">Odak</a>
-        <a href="#hava" class="toc-link">Hava</a>
-        <a href="#astro" class="toc-link">Astro</a>
-        <a href="#karar" class="toc-link">Karar</a>
-        <a href="#is" class="toc-link">İş</a>
-        <a href="#finans" class="toc-link">Finans</a>
-    </nav>
-    <div class="toc-progress"><div class="toc-progress-bar" id="tocProgress"></div></div>
-
-    <!-- Mood Band - decorative gradient strip -->
-    <div class="mood-band"></div>
-
-    <div class="container">
-        <!-- AI GENERATED CONTENT INJECTED HERE -->
-        $content_body
-        
-        <!-- Footer -->
-        <div class="footer">
-            <p>Okuma süresi: ~2.5 dk</p>
-            <p class="data-freshness">Veri tazeliği: Hava $weather_time — Finans $finance_time ($market_status)</p>
-            <p style="opacity: 0.5;">© 2026 Morning Brief - Fatih</p>
-        </div>
-    </div>
-    <script>
-        const tocLinks = Array.from(document.querySelectorAll(".toc-link"));
-        const sections = tocLinks.map(link => document.querySelector(link.getAttribute("href")));
-        const progressBar = document.getElementById("tocProgress");
-
-        const setActive = (id) => {
-            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === ("#" + id)));
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) setActive(entry.target.id);
-            });
-        }, { rootMargin: "-40% 0px -50% 0px", threshold: 0 });
-
-        sections.forEach(section => section && observer.observe(section));
-
-        const onScroll = () => {
-            const doc = document.documentElement;
-            const scrollTop = doc.scrollTop || document.body.scrollTop;
-            const scrollHeight = doc.scrollHeight - doc.clientHeight;
-            const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-            if (progressBar) progressBar.style.width = pct + "%";
-        };
-        document.addEventListener("scroll", onScroll, { passive: true });
-        onScroll();
-    </script>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#F6F6F7;">
+      <tr>
+        <td align="center" style="padding:0 12px 24px 12px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px; width:100%;">
+            <tr>
+              <td style="padding:6px 14px; background-color:#D0D3DC; color:#4B5563; font-size:11px; text-align:right;">
+                SON GUNCELLEME: $gen_time (Qatar)
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px; background-color:#FFFFFF; border:1px solid #D0D3DC; border-top:none;">
+                <p style="display:inline-block; margin:0 0 8px 0; font-size:12px; color:#C85826; background-color:#FDEDE5; border:1px solid #F7CBB5; border-radius:8px; padding:4px 8px;">
+                  📅 $date_string
+                </p>
+                <p style="margin:0; font-size:30px; line-height:1.15; font-weight:800; color:#1F2933;">Gunaydin, Fatih.</p>
+                <p style="margin:6px 0 0 0; font-size:13px; color:#4B5563;">📍 Doha, Katar</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:10px 18px 8px 18px;">
+                <p style="margin:0; font-size:12px; color:#4B5563; line-height:1.5;">
+                  <a href="#odak" style="color:#2B7CAB; text-decoration:none;">Odak</a> ·
+                  <a href="#hava" style="color:#2B7CAB; text-decoration:none;">Hava</a> ·
+                  <a href="#astro" style="color:#2B7CAB; text-decoration:none;">Astro</a> ·
+                  <a href="#karar" style="color:#2B7CAB; text-decoration:none;">Karar</a> ·
+                  <a href="#is" style="color:#2B7CAB; text-decoration:none;">Is</a> ·
+                  <a href="#finans" style="color:#2B7CAB; text-decoration:none;">Finans</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 18px 14px 18px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="height:4px; background-color:#6EB6E8;" width="33%"></td>
+                    <td style="height:4px; background-color:#26B46D;" width="34%"></td>
+                    <td style="height:4px; background-color:#EE763A;" width="33%"></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 18px;">
+                $content_body
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 18px 24px 18px; text-align:center; border-top:1px solid #D0D3DC;">
+                <p style="margin:0; font-size:12px; color:#4B5563;">Okuma suresi: ~2.5 dk</p>
+                <p style="margin:6px 0 0 0; font-size:12px; color:#4B5563;">Veri tazeligi: Hava $weather_time — Finans $finance_time ($market_status)</p>
+                <p style="margin:8px 0 0 0; font-size:11px; color:#6B7280;">© 2026 Morning Brief - Fatih</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 </body>
 </html>
 """)
@@ -574,11 +332,18 @@ class _HTMLSanitizer(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag not in self.allowed_tags:
             return
-        safe_attrs = []
+        safe_attrs = {}
         for k, v in attrs:
             if k in self.allowed_attrs.get(tag, set()):
-                safe_attrs.append((k, v))
-        attr_str = "".join([f' {k}="{v}"' for k, v in safe_attrs])
+                safe_attrs[k] = v
+
+        class_name = safe_attrs.get("class", "")
+        class_style = _style_for_classes(class_name)
+        if class_style:
+            existing = safe_attrs.get("style", "")
+            safe_attrs["style"] = _merge_styles(existing, class_style)
+
+        attr_str = "".join([f' {k}="{v}"' for k, v in safe_attrs.items()])
         self.parts.append(f"<{tag}{attr_str}>")
 
     def handle_endtag(self, tag):
@@ -594,11 +359,65 @@ class _HTMLSanitizer(HTMLParser):
     def handle_charref(self, name):
         self.parts.append(f"&#{name};")
 
+
+EMAIL_CLASS_STYLES = {
+    "section-wrapper": "padding:0 0 12px 0;",
+    "card": "background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:12px;padding:16px;margin-bottom:10px;",
+    "card-header": "margin-bottom:8px;",
+    "card-title": "font-size:16px;font-weight:700;color:#1F2933;line-height:1.4;",
+    "tag": "display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;",
+    "tag-blue": "background-color:#EAF3FA;color:#2B7CAB;border:1px solid #CDE4F4;",
+    "tag-gold": "background-color:#FDEDE5;color:#C85826;border:1px solid #F7CBB5;",
+    "tag-red": "background-color:#FDEDE5;color:#C85826;border:1px solid #F7CBB5;",
+    "tag-green": "background-color:#E9F8F0;color:#1D8F56;border:1px solid #BEE8D0;",
+    "tag-lavender": "background-color:#EEF4F8;color:#4B5563;border:1px solid #D0D3DC;",
+    "weather-card": "background-color:#F6F6F7;border:1px solid #D0D3DC;border-radius:12px;padding:14px;margin-bottom:12px;",
+    "weather-icon-wrap": "margin-bottom:10px;",
+    "weather-summary": "font-size:15px;color:#1F2933;line-height:1.5;",
+    "weather-periods": "margin-top:8px;",
+    "weather-period": "background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:10px;padding:10px;margin-bottom:8px;font-size:14px;color:#1F2933;line-height:1.45;",
+    "decision-grid": "margin-top:8px;",
+    "decision-box": "background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:10px;padding:10px;margin-bottom:8px;",
+    "d-icon": "font-size:16px;margin-right:6px;",
+    "d-label": "font-size:12px;color:#4B5563;font-weight:600;",
+    "d-val": "font-size:14px;font-weight:700;color:#1F2933;",
+    "d-good": "color:#26B46D;",
+    "d-bad": "color:#EE763A;",
+    "d-neutral": "color:#4B5563;",
+    "ticker-pill": "display:inline-block;background-color:#FDEDE5;border:1px solid #F7CBB5;border-radius:4px;padding:2px 8px;color:#C85826;font-family:\"SFMono-Regular\",Menlo,Consolas,\"Liberation Mono\",monospace;font-size:13px;",
+    "bullet-list": "margin:0;padding-left:18px;",
+    "finance-list": "list-style:none;padding:0;margin:0;",
+    "source-link": "color:#2B7CAB;text-decoration:underline;",
+}
+
+
+def _merge_styles(existing_style, extra_style):
+    existing = (existing_style or "").strip().rstrip(";")
+    extra = (extra_style or "").strip().rstrip(";")
+    if existing and extra:
+        return f"{existing};{extra};"
+    if existing:
+        return f"{existing};"
+    if extra:
+        return f"{extra};"
+    return ""
+
+
+def _style_for_classes(class_name):
+    if not class_name:
+        return ""
+    styles = []
+    for cls in class_name.split():
+        style = EMAIL_CLASS_STYLES.get(cls)
+        if style:
+            styles.append(style)
+    return "".join(styles)
+
 def _sanitize_html(raw_html):
     allowed_tags = {
-        "div", "p", "ul", "li", "strong", "em", "span", "a", "br",
+        "div", "p", "ul", "li", "strong", "em", "span", "a", "br", "img",
+        "table", "tbody", "tr", "td",
         "h2", "h3", "h4",
-        "svg", "circle", "line", "path", "g", "ellipse", "polygon",
     }
     allowed_attrs = {
         "div": {"class", "id", "style"},
@@ -606,17 +425,15 @@ def _sanitize_html(raw_html):
         "ul": {"class"},
         "li": {"class"},
         "span": {"class", "style"},
-        "a": {"href", "target", "style"},
+        "a": {"href", "target", "style", "class"},
+        "img": {"src", "alt", "width", "height", "style"},
+        "table": {"class", "style", "width", "cellpadding", "cellspacing", "border", "role"},
+        "tbody": {"class", "style"},
+        "tr": {"class", "style"},
+        "td": {"class", "style", "width", "colspan", "rowspan", "align", "valign"},
         "h2": {"class"},
         "h3": {"class"},
         "h4": {"class"},
-        "svg": {"width", "height", "viewBox", "viewbox", "fill", "xmlns", "style", "preserveAspectRatio", "preserveaspectratio"},
-        "circle": {"cx", "cy", "r", "fill", "stroke", "stroke-width"},
-        "line": {"x1", "x2", "y1", "y2", "stroke", "stroke-width", "stroke-linecap"},
-        "path": {"d", "stroke", "stroke-width", "fill"},
-        "g": {"stroke", "stroke-width", "stroke-linecap"},
-        "ellipse": {"cx", "cy", "rx", "ry", "fill", "stroke", "stroke-width"},
-        "polygon": {"points", "fill", "stroke", "stroke-width"},
     }
     parser = _HTMLSanitizer(allowed_tags, allowed_attrs)
     parser.feed(raw_html)
@@ -637,6 +454,36 @@ def _ensure_required_sections(raw_html):
             f'<div class="section-wrapper" id="{sec}"><div class="card"><p>Bu bölüm şu an üretilemedi. Lütfen tekrar deneyin.</p></div></div>'
         )
     return raw_html + "\n" + "\n".join(fallback_blocks)
+
+
+def _html_to_plain_text(html_content):
+    text = re.sub(r"(?i)<br\s*/?>", "\n", html_content)
+    text = re.sub(r"(?i)</(p|div|tr|td|li|h1|h2|h3|h4)>", "\n", text)
+    text = re.sub(r"(?i)<li[^>]*>", "- ", text)
+    text = re.sub(r"(?i)<[^>]+>", "", text)
+    text = html.unescape(text)
+    lines = []
+    prev_blank = False
+    for raw_line in text.splitlines():
+        line = re.sub(r"\s+", " ", raw_line).strip()
+        if not line:
+            if not prev_blank:
+                lines.append("")
+            prev_blank = True
+            continue
+        lines.append(line)
+        prev_blank = False
+    return "\n".join(lines).strip()
+
+
+def _log_payload_size(html_content):
+    payload = len(html_content.encode("utf-8"))
+    print(f"📦 HTML payload size: {payload} bytes")
+    if payload > EMAIL_HTML_BUDGET_BYTES:
+        print(
+            f"⚠️ HTML payload exceeds budget ({EMAIL_HTML_BUDGET_BYTES} bytes). "
+            "Some clients may clip long emails."
+        )
 
 def format_date_str(now):
     months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -664,9 +511,9 @@ def send_email(html_content, date_str):
     msg["From"] = EMAIL_USER
     msg["To"] = EMAIL_TO
 
-    # We send the rich HTML
-    part = MIMEText(html_content, "html")
-    msg.attach(part)
+    plain_text = _html_to_plain_text(html_content)
+    msg.attach(MIMEText(plain_text, "plain", "utf-8"))
+    msg.attach(MIMEText(html_content, "html", "utf-8"))
 
     try:
         print("🔌 Gmail SMTP sunucusuna (smtp.gmail.com:465) bağlanılıyor...")
@@ -702,14 +549,21 @@ def _weather_icon_class(code):
     return "partly-cloudy"
 
 
-# Inline SVG weather icons (pastel, cartoony)
-WEATHER_SVGS = {
-    "sunny": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="26" cy="26" r="12" fill="#F6D87E" stroke="#E8A87C" stroke-width="2"/><g stroke="#E8A87C" stroke-width="2" stroke-linecap="round"><line x1="26" y1="4" x2="26" y2="10"/><line x1="26" y1="42" x2="26" y2="48"/><line x1="4" y1="26" x2="10" y2="26"/><line x1="42" y1="26" x2="48" y2="26"/><line x1="10.4" y1="10.4" x2="14.6" y2="14.6"/><line x1="37.4" y1="37.4" x2="41.6" y2="41.6"/><line x1="10.4" y1="41.6" x2="14.6" y2="37.4"/><line x1="37.4" y1="14.6" x2="41.6" y2="10.4"/></g></svg>',
-    "partly-cloudy": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="18" r="9" fill="#F6D87E" stroke="#E8A87C" stroke-width="1.5"/><g stroke="#E8A87C" stroke-width="1.5" stroke-linecap="round"><line x1="20" y1="4" x2="20" y2="7"/><line x1="9" y1="7" x2="11" y2="9.5"/><line x1="5" y1="18" x2="8" y2="18"/><line x1="31" y1="7" x2="29" y2="9.5"/></g><ellipse cx="30" cy="34" rx="14" ry="9" fill="#D8EAF6" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="22" cy="31" r="7" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="36" cy="31" r="6" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/></svg>',
-    "cloudy": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="28" cy="32" rx="16" ry="10" fill="#D8EAF6" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="18" cy="28" r="9" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="34" cy="27" r="7" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="26" cy="22" r="6" fill="#EEF4FB" stroke="#A8D8EA" stroke-width="1.5"/></svg>',
-    "rainy": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="26" cy="22" rx="15" ry="10" fill="#D8EAF6" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="16" cy="18" r="8" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><circle cx="33" cy="18" r="7" fill="#E4F0FA" stroke="#A8D8EA" stroke-width="1.5"/><g stroke="#A8D8EA" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="34" x2="14" y2="40"/><line x1="24" y1="34" x2="22" y2="42"/><line x1="32" y1="34" x2="30" y2="40"/></g></svg>',
-    "stormy": '<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="26" cy="20" rx="15" ry="10" fill="#C8C8D8" stroke="#9A9AB0" stroke-width="1.5"/><circle cx="16" cy="16" r="8" fill="#D4D4E0" stroke="#9A9AB0" stroke-width="1.5"/><circle cx="33" cy="16" r="7" fill="#D4D4E0" stroke="#9A9AB0" stroke-width="1.5"/><polygon points="24,30 28,30 25,38 30,38 22,48 25,40 21,40" fill="#F6D87E" stroke="#E8A87C" stroke-width="1"/><g stroke="#A8D8EA" stroke-width="1.8" stroke-linecap="round"><line x1="14" y1="34" x2="12" y2="40"/><line x1="36" y1="34" x2="34" y2="40"/></g></svg>',
+WEATHER_ICON_IMAGES = {
+    "sunny": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2600.png", "Gunesli"),
+    "partly-cloudy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26c5.png", "Parcali bulutlu"),
+    "cloudy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2601.png", "Bulutlu"),
+    "rainy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f327.png", "Yagmurlu"),
+    "stormy": ("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26c8.png", "Firtinali"),
 }
+
+
+def _weather_icon_image_html(icon_key):
+    src, alt = WEATHER_ICON_IMAGES.get(icon_key, WEATHER_ICON_IMAGES["partly-cloudy"])
+    return (
+        f'<img src="{src}" alt="{alt}" width="40" height="40" '
+        'style="display:block;width:40px;height:40px;border:0;outline:none;margin:0 0 8px 0;" />'
+    )
 
 
 def get_weather_data():
@@ -967,120 +821,107 @@ def generate_daily_brief():
 
     # Fetch weather forecast
     weather_data, weather_icon_key, weather_fetched_at = get_weather_data()
-    weather_icon_svg = WEATHER_SVGS.get(weather_icon_key, WEATHER_SVGS["partly-cloudy"])
+    weather_icon_html = _weather_icon_image_html(weather_icon_key)
 
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     market_status = _market_status_us(now_utc)
     weather_time_display = _format_time_for_display(datetime.datetime.fromisoformat(weather_fetched_at), TIMEZONE)
     finance_time_display = _format_time_for_display(datetime.datetime.fromisoformat(finance_latest_ts), "US/Eastern")
 
+    if EMAIL_RENDER_MODE != "email-safe":
+        print(f"⚠️ Unsupported EMAIL_RENDER_MODE='{EMAIL_RENDER_MODE}'. Falling back to email-safe.")
+    if THEME_PROFILE != "offwhite-slate":
+        print(f"⚠️ Unsupported THEME_PROFILE='{THEME_PROFILE}'. Falling back to offwhite-slate.")
+    print(f"Email render mode: {EMAIL_RENDER_MODE} | Theme: {THEME_PROFILE}")
+
     # --- ENRICHED PROMPT WITH REAL EPHEMERIS DATA ---
     prompt = f"""
-    Sen Fatih için "Morning Brief" hazırlayan, çok zeki ve biraz da esprili bir astroloji & finans asistanısın.
+    Sen Fatih için "Morning Brief" hazırlayan, zeki ama net bir astroloji ve finans asistanısın.
 
     PARAMETRELER:
-    - Tarih: {date_str} (Zaman dilimi: Asia/Qatar).
-    - Kullanıcı: Fatih (Doğum: {USER_BIRTH_DATA}).
-    - Astro Kimlik: Güneş İkizler, Ay Terazi, Yükselen Aslan.
-    - Dil: Türkçe.
-    - Ton: Kısa, net, bullet-point ağırlıklı. Mobil öncelikli.
+    - Tarih: {date_str}
+    - Kullanıcı: Fatih (Doğum: {USER_BIRTH_DATA})
+    - Dil: Türkçe
+    - Ton: Kısa, net, mobilde hızlı okunur.
 
+    EMAIL TASARIM KISITLARI (ÇOK ÖNEMLİ):
+    - İçerik yalnızca BODY içeriği olsun.
+    - Her bölüm: <div class="section-wrapper" id="...">...</div>
+    - Sadece bu class adlarını kullan: section-wrapper, card, tag, tag-blue, tag-gold, tag-red, tag-green, tag-lavender,
+      weather-card, weather-icon-wrap, weather-summary, weather-periods, weather-period,
+      decision-grid, decision-box, d-icon, d-label, d-val, d-good, d-bad, d-neutral,
+      bullet-list, finance-list, ticker-pill, source-link.
+    - No script, no svg, no canvas, no iframe, no form, no style tag.
+    - CSS custom property kullanma.
+    - Flex veya grid layout kullanma.
+    - Tek kolon, email-uyumlu sade bloklar kullan.
+    - Karmaşık animasyon, sticky, hover davranışı istemiyoruz.
+
+    GERÇEK VERİLER:
     {planetary_data}
-
-    PORTFÖY İZLEME LISTESI (Whitelist): QQQI, FDVV, SCHD, SCHG, IAUI, SLV.
-    YASAKLI LISTE (Blacklist): YMAG, TQQQ, GLDW.
-
     {financial_data}
-
     {weather_data}
 
-    TAKİP EDİLEN ASTROLOG KAYNAKLARI:
-    {ASTROLOGER_SOURCES}
+    PORTFÖY:
+    - Whitelist: QQQI, FDVV, SCHD, SCHG, IAUI, SLV
+    - Blacklist: YMAG, TQQQ, GLDW
 
+    ASTROLOJİ KAYNAKLARI:
+    {ASTROLOGER_SOURCES}
     {ASTROLOGY_BOOKS}
 
-    GÖREV:
-    Aşağıdaki HTML yapısına BİREBİR uyarak sadece BODY içeriğini (header/footer hariç) üret.
-    Her bölümü <div class="section-wrapper" id="...">...</div> içine al.
+    BÖLÜMLER:
+    1) ODAK (id=odak):
+       - Bir motto, 3 kelime kuralı, kısa mood geçiş analizi.
+       - card içinde olsun.
 
-    İSTENEN BÖLÜMLER VE HTML YAPISI:
-
-    1. ODAK ÇAPASI (ID: odak):
-       - <div class="card" style="border-left: 4px solid var(--accent-primary);"> kullan.
-       - İçinde bir Motto ve "3 Kelime Kuralı" olsun.
-       - Hemen altına kısa (1-2 cümle) bir ruh hali geçiş analizi yap (dün→bugün mood).
-
-    2. HAVA DURUMU (ID: hava):
-       - MUTLAKA şu yapıyı kullan:
+    2) HAVA (id=hava):
+       - Şu yapıyı kullan:
          <div class="weather-card">
            <div class="weather-icon-wrap">
-             {weather_icon_svg}
-             <div class="weather-summary">... özet ...</div>
+             {weather_icon_html}
+             <div class="weather-summary">...</div>
            </div>
            <div class="weather-periods">
              <div class="weather-period"><strong>Sabah</strong>...</div>
              <div class="weather-period"><strong>Öğle</strong>...</div>
              <div class="weather-period"><strong>Akşam</strong>...</div>
            </div>
-           <p style="margin-top:8px; font-size:0.8rem; color:#7A7A7A;">Veri zamanı: {weather_time_display}</p>
+           <p style="margin-top:8px; font-size:12px; color:#4B5563;">Veri zamanı: {weather_time_display}</p>
            <p style="margin-top:8px;"><em>Ne giymeliyim: ...</em></p>
          </div>
-       - YUKARIDA VERİLEN GERÇEK HAVA DURUMU VERİLERİNİ KULLAN.
-       - Sabah (06-09), öğle (12-15), akşam (18-21) sıcaklık aralığı ve durumu yaz.
-       - "Ne giymeliyim?" pratik önerisi ekle.
-       - <span class="tag tag-blue"> ile hava durumu etiketleri kullanabilirsin.
+       - Gerçek hava verisini kullan.
 
-    3. HOROSKOP (ID: astro):
-       - YUKARIDA VERİLEN GERÇEK GEZEGENSEl VERİLERİ KULLAN. Uydurma yapma!
-       - Güncel transit pozisyonlarını Fatih'in natal haritasıyla karşılaştır.
-       - Aslan Yükselen ve Kova/İkizler transitlerine odaklan.
-       - Gezegen retroları varsa mutlaka belirt.
-       - <span class="tag tag-blue"> gibi renkli etiketler kullan (tag-blue, tag-gold, tag-red, tag-green, tag-lavender).
-       - Bu bölüm UZUN OLSUN: en az 3-4 paragraf + kısa bir bullet list (3 madde).
-       - Paragraflar: (1) transit+natal sentez, (2) duygu/zihin/ilişki etkisi, (3) iş/finans etkisi, (4) pratik öneri.
-       - "Astro-Bilişsel Uyarı" başlığı altında bir <div class="card" style="background: #EDE7F6;"> ekle.
-       - Bölümün sonuna "Günün Astroloji Kaynakları" başlığı altında EN AZ 5 kaynak ver.
-         En az 3 Türk + 2 uluslararası kaynak olsun (listeden seç).
-         Şu formatı kullan: <a href="URL" target="_blank" class="source-link">İsim</a>.
-         Farklı günlerde farklı astrologları öner, her gün aynılarını koyma.
-         Ayrıca referans kitaplarından birini de "Okuma Önerisi" olarak ekle.
+    3) HOROSKOP (id=astro):
+       - Gerçek transit + natal sentez.
+       - 3-4 paragraf + 3 maddelik kısa liste.
+       - Etiketler: tag-blue/tag-gold/tag-red/tag-green/tag-lavender.
+       - Kaynak bölümü ekle; en az 5 link (3 Türk + 2 uluslararası), class=source-link.
+       - Bir "Astro-Bilişsel Uyarı" card'ı ekle (açık mavi-slate tonunda).
 
-    4. KARAR ZAMAN HARİTASI (ID: karar):
-       - Gerçek transit verilerine göre karar zamanlarını belirle.
-       - MUTLAKA şu grid yapısını kullan:
-         <div class="decision-grid">
-            <div class="decision-box">...Simge, EN İYİ, Eylem...</div>
-            <div class="decision-box">...Simge, NÖTR, Eylem...</div>
-            <div class="decision-box">...Simge, KAÇIN, Eylem...</div>
-         </div>
+    4) KARAR (id=karar):
+       - En iyi, nötr, kaçın alanları.
+       - decision-grid içinde 3 adet decision-box; hepsi dikey okunabilir olsun.
 
-    5. İŞ & KARİYER (ID: is):
-       - Bullet list kullan (<ul class="bullet-list">).
-       - Yükselen Aslan liderliği ile İkizler zekasını birleştir.
-       - Günün transit verilerini iş kararlarına yansıt.
+    5) İŞ (id=is):
+       - <ul class="bullet-list"> ile kısa maddeler.
 
-    6. FİNANS (ID: finans):
-       - YUKARIDA VERİLEN GERÇEK PİYASA VERİLERİNİ KULLAN. Fiyat ve değişim yüzdelerini göster.
-       - Fatih'in Whitelist'indeki hisseler için somut "Davranışsal Notlar" yaz.
-       - Her hissenin gerçek fiyatını ve günlük değişimini belirt.
-       - Hisse adlarını <span class="ticker-pill">HİSSE</span> şeklinde yaz.
-       - Uydurma fiyat verme, yukarıdaki Yahoo Finance verilerini kullan.
-       - Bölümün hemen başında küçük bir satır ekle: "Veri zamanı: {finance_time_display} (US/Eastern) — {market_status}"
-       - Listeyi şu yapıda ver: <ul class="finance-list"> içinde <li> satırları.
+    6) FİNANS (id=finans):
+       - Gerçek fiyat + değişim yüzdesi.
+       - Her hisse için davranışsal not.
+       - Hisse adını <span class="ticker-pill"> ile yaz.
+       - Başta veri zamanı satırı:
+         "Veri zamanı: {finance_time_display} (US/Eastern) — {market_status}"
+       - Liste yapısı: <ul class="finance-list"><li>...</li></ul>
 
-    7. TEK SORU:
-       - Günün düşündürücü sorusu (astrolojik temalarla bağlantılı olabilir).
+    7) TEK SORU:
+       - Günün düşündürücü sorusu.
 
-    ÖNEMLİ KURALLAR:
-    - Asla ```html``` bloğu koyma, sadece saf HTML kodu döndür.
-    - Asla <html>, <head>, <body> taglerini açma.
-    - <div class="visual-mood"> KULLANMA. Mood band zaten template'te var.
-    - Light mode (krem/pastel tonlar) uyumlu ol. Arka plan açık renk, yazılar koyu. CSS class'ları doğru kullan.
-    - Renkli etiketler için tag-blue, tag-gold, tag-red, tag-green, tag-lavender class'larını kullan.
-    - Horoskop bölümünde gerçek gezegen pozisyonlarını kullan, uydurma bilgi verme.
-    - Astroloji kaynaklarına link verirken sadece yukarıda listelenen güvenilir kaynakları kullan.
-    - Bölümler arası gereksiz boşluk bırakma, kompakt tut.
-    - Tüm metin boyutları tutarlı olsun (0.95rem), başlıklar hariç.
+    KURALLAR:
+    - Yalnızca saf HTML döndür.
+    - <html>, <head>, <body> açma.
+    - Uydurma finans veya astro veri üretme.
+    - Bölümler kısa, net, email-uyumlu olsun.
     """
 
     try:
@@ -1118,6 +959,7 @@ def generate_daily_brief():
         finance_time=finance_time_display,
         market_status=market_status
     )
+    _log_payload_size(final_html)
 
     # 1. Dosyaya Yaz (Web İçin)
     with open("index.html", "w", encoding="utf-8") as f:
