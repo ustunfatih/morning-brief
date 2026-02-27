@@ -87,3 +87,9 @@ Checkpoints:
 - Links and anchor tap behavior
 - Plain-text fallback readability (non-HTML clients)
 - Payload size warning does not exceed budget (`EMAIL_HTML_BUDGET_BYTES`, default `102400`)
+
+## Contributors
+
+- Fatih Üstün
+- Claude (AI assistant)
+- Codex (OpenAI coding assistant)
