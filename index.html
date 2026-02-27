@@ -3,556 +3,289 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- CACHE BUSTING -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Morning Brief | Fatih</title>
     <style>
-        :root {
-            --bg-body: #FDF6EC; --bg-card: #FFFFFF; --bg-card-highlight: #FFF8F0;
-            --text-main: #3D3D3D; --text-muted: #7A7A7A;
-            --accent-primary: #E8A87C; --accent-secondary: #A8D8EA;
-            --accent-danger: #F3A6A6; --accent-success: #A8E6CF;
-            --accent-lavender: #C3B1E1;
-            --border-radius: 16px;
-            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --shadow-card: 0 6px 18px rgba(31, 25, 10, 0.08);
-            --border-light: #EDE3D7;
-            --text-base: 0.95rem;
-            --text-small: 0.8rem;
-            --text-title: 1.15rem;
-            --text-hero: 1.9rem;
-        }
-
-        /* Reset & Base */
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: var(--font-stack);
-            margin: 0;
-            padding: 0;
-            line-height: 1.65;
-            font-size: var(--text-base);
-            min-height: 100vh;
-        }
-
-        /* Layout Container */
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 0 0 24px 0;
-        }
-
-        /* Header Graphic - RESPONSIVE */
-        .header-wrapper {
-            background-color: var(--bg-body);
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
-        .header-graphic {
-            width: 100%;
-            max-width: 480px;
-            height: 180px;
-            background: linear-gradient(135deg, #FFF1E6 0%, #E8F4FD 50%, #F3E8FF 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            border-bottom: 1px solid var(--border-light);
-            border-radius: 0 0 24px 24px;
-        }
-
-        .header-content {
-            position: absolute;
-            bottom: 18px;
-            left: 15px;
-            z-index: 2;
-        }
-        .date-badge {
-            background: rgba(232, 168, 124, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-size: var(--text-small);
-            color: #C07A50;
-            font-weight: 600;
-            display: inline-block;
-            margin-bottom: 5px;
-        }
-        h1 { margin: 0; font-size: var(--text-hero); font-weight: 800; letter-spacing: -0.6px; color: #3D3D3D; }
-
-        /* Mood Band - thin decorative strip */
-        .mood-band {
-            height: 6px;
-            width: 100%;
-            background: linear-gradient(90deg, var(--accent-lavender) 0%, var(--accent-secondary) 35%, var(--accent-success) 65%, var(--accent-primary) 100%);
-            margin: 0;
-            border: none;
-        }
-
-        /* Navigation (TOC) */
-        .toc-scroller {
-            position: sticky;
-            top: 0;
-            background: rgba(253, 246, 236, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 100;
-            padding: 10px 0;
-            white-space: nowrap;
-            overflow-x: auto;
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            scrollbar-width: none;
-        }
-        .toc-progress {
-            position: sticky;
-            top: 46px;
-            height: 3px;
-            background: rgba(232, 168, 124, 0.15);
-            z-index: 99;
-        }
-        .toc-progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            transition: width 0.1s linear;
-        }
-        .toc-scroller::-webkit-scrollbar { display: none; }
-        .toc-link {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 20px;
-            background: var(--bg-card);
-            transition: all 0.2s;
-            border: 1px solid var(--border-light);
-        }
-        .toc-link:hover, .toc-link.active {
-            color: #FFFFFF;
-            background: var(--accent-primary);
-            border-color: var(--accent-primary);
-        }
-        .toc-link:focus-visible {
-            outline: 2px solid #C07A50;
-            outline-offset: 2px;
-        }
-
-        /* Sections */
-        .section-wrapper { padding: 12px 15px 0 15px; scroll-margin-top: 72px; }
-
-        /* Cards */
-        .card {
-            background-color: var(--bg-card);
-            border-radius: var(--border-radius);
-            padding: 18px;
-            margin-bottom: 12px;
-            border: 1px solid var(--border-light);
-            box-shadow: var(--shadow-card);
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        .card-title {
-            font-size: 1rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .tag {
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            padding: 4px 9px;
-            border-radius: 8px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-        .tag-blue { background: rgba(168, 216, 234, 0.22); color: #5B9BB5; border: 1px solid rgba(168, 216, 234, 0.35); }
-        .tag-gold { background: rgba(232, 168, 124, 0.22); color: #C07A50; border: 1px solid rgba(232, 168, 124, 0.35); }
-        .tag-red { background: rgba(243, 166, 166, 0.22); color: #C07070; border: 1px solid rgba(243, 166, 166, 0.35); }
-        .tag-green { background: rgba(168, 230, 207, 0.22); color: #5DAE8B; border: 1px solid rgba(168, 230, 207, 0.35); }
-        .tag-lavender { background: rgba(195, 177, 225, 0.22); color: #8B72B2; border: 1px solid rgba(195, 177, 225, 0.35); }
-
-        /* Typography & Lists */
-        p { margin-bottom: 12px; font-size: var(--text-base); color: #555; }
-        p:last-child { margin-bottom: 0; }
-        h2, h3, h4 { font-size: var(--text-title); margin: 0 0 8px 0; }
-        ul.bullet-list { list-style: none; padding: 0; margin: 0; }
-        ul.bullet-list li {
-            position: relative;
-            padding-left: 18px;
-            margin-bottom: 8px;
-            font-size: var(--text-base);
-            color: #4A4A4A;
-        }
-        ul.bullet-list li::before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: var(--accent-secondary);
-            font-weight: bold;
-        }
-
-        /* Weather Card */
-        .weather-card {
-            background: linear-gradient(135deg, #E8F4FD 0%, #F0EAFF 100%);
-            border-radius: var(--border-radius);
-            padding: 18px;
-            margin-bottom: 12px;
-            border: 1px solid #D4E8F0;
-            box-shadow: var(--shadow-card);
-            position: relative;
-        }
-        .weather-card .weather-icon-wrap {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 10px;
-        }
-        .weather-card .weather-icon-wrap svg {
-            flex-shrink: 0;
-        }
-        .weather-card .weather-summary {
-            font-size: var(--text-base);
-            color: #4A4A4A;
-        }
-        .weather-card .weather-summary strong {
-            color: #3D3D3D;
-        }
-        .weather-periods {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .weather-period {
-            background: rgba(255,255,255,0.7);
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
-            font-size: var(--text-base);
-            color: #4A4A4A;
-            min-height: 84px;
-            line-height: 1.45;
-        }
-        .weather-period strong {
-            display: block;
-            font-size: var(--text-small);
-            color: var(--text-muted);
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        /* Decision Map Grid */
-        .decision-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .decision-box {
-            background: var(--bg-card-highlight);
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border-light);
-            min-height: 84px;
-            line-height: 1.45;
-        }
-        .d-icon { font-size: 1.2rem; margin-bottom: 4px; }
-        .d-label { font-size: var(--text-small); color: var(--text-muted); font-weight: 600; }
-        .d-val { font-size: var(--text-base); font-weight: 700; margin-top: 2px; }
-        .d-good { color: var(--accent-success); }
-        .d-bad { color: var(--accent-danger); }
-        .d-neutral { color: var(--text-muted); }
-
-        /* Finance Pill */
-        .ticker-pill {
-            display: inline-block;
-            background: rgba(232, 168, 124, 0.12);
-            border: 1px solid rgba(232, 168, 124, 0.3);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: var(--text-base);
-            color: #C07A50;
-            margin-right: 4px;
-        }
-        ul.finance-list { list-style: none; padding: 0; margin: 0; }
-        ul.finance-list li {
-            background: rgba(255, 248, 240, 0.6);
-            border: 1px solid rgba(232, 223, 212, 0.7);
-            border-radius: 10px;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            font-size: var(--text-base);
-            color: #4A4A4A;
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 20px 15px;
-            font-size: var(--text-small);
-            color: var(--text-muted);
-            border-top: 1px solid var(--border-light);
-            margin-top: 12px;
-        }
-        .data-freshness {
-            font-size: 0.75rem;
-            color: #9A8E82;
-            margin-top: 6px;
-        }
-
-        .status-bar {
-            background: #F5EDE3;
-            color: #9A8E82;
-            font-size: 0.72rem;
-            text-align: right;
-            padding: 5px 10px;
-            font-family: monospace;
-            border-bottom: 1px solid var(--border-light);
-        }
-        .source-link {
-            color: #8B72B2;
-            text-decoration: none;
-            border-bottom: 1px solid rgba(139, 114, 178, 0.25);
-        }
-        .source-link:hover { border-bottom-color: rgba(139, 114, 178, 0.6); }
-
-        /* Responsive: wider on desktop */
-        @media (min-width: 768px) {
-            .container, .header-graphic { max-width: 600px; }
-        }
-        @media (min-width: 1024px) {
-            .container, .header-graphic { max-width: 680px; }
-        }
-        @media (max-width: 420px) {
-            body { font-size: 0.92rem; }
-            .weather-periods { grid-template-columns: 1fr; }
-            .decision-grid { grid-template-columns: 1fr; }
-            .card { padding: 16px; }
-        }
+      body, table, td, p, a, span, div {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      img {
+        display: block;
+        border: 0;
+        outline: none;
+        text-decoration: none;
+      }
+      p {
+        margin: 0 0 12px 0;
+      }
+      .section-wrapper {
+        padding: 0 0 12px 0;
+      }
+      .card {
+        background-color: #FFFFFF;
+        border: 1px solid #D0D3DC;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 10px;
+      }
+      .card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1F2933;
+        line-height: 1.4;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 8px;
+        letter-spacing: 0.3px;
+      }
+      .tag-blue { background-color: #EAF3FA; color: #2B7CAB; border: 1px solid #CDE4F4; }
+      .tag-gold { background-color: #FDEDE5; color: #C85826; border: 1px solid #F7CBB5; }
+      .tag-red { background-color: #FDEDE5; color: #C85826; border: 1px solid #F7CBB5; }
+      .tag-green { background-color: #E9F8F0; color: #1D8F56; border: 1px solid #BEE8D0; }
+      .tag-lavender { background-color: #EEF4F8; color: #4B5563; border: 1px solid #D0D3DC; }
+      .weather-card {
+        background-color: #F6F6F7;
+        border: 1px solid #D0D3DC;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+      .weather-summary {
+        font-size: 15px;
+        color: #1F2933;
+        line-height: 1.5;
+      }
+      .weather-period {
+        background-color: #FFFFFF;
+        border: 1px solid #D0D3DC;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #1F2933;
+        line-height: 1.45;
+      }
+      .decision-box {
+        background-color: #FFFFFF;
+        border: 1px solid #D0D3DC;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+      }
+      .d-good { color: #26B46D; }
+      .d-bad { color: #EE763A; }
+      .d-neutral { color: #4B5563; }
+      .ticker-pill {
+        display: inline-block;
+        background-color: #FDEDE5;
+        border: 1px solid #F7CBB5;
+        border-radius: 4px;
+        padding: 2px 8px;
+        color: #C85826;
+        font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 13px;
+      }
+      .bullet-list {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .bullet-list li {
+        margin: 0 0 8px 0;
+        color: #1F2933;
+      }
+      .finance-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .finance-list li {
+        background-color: #FFFFFF;
+        border: 1px solid #D0D3DC;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+      }
+      .source-link {
+        color: #2B7CAB;
+        text-decoration: underline;
+      }
     </style>
 </head>
-<body>
-    <div class="status-bar">SON GÜNCELLEME: 08:42:58 (Qatar)</div>
+<body style="margin:0; padding:0; background-color:#F6F6F7; color:#1F2933;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent;">
+      Morning Brief: Astroloji, hava ve finans ozeti.
+    </div>
 
-    <!-- Header Wrapper to Center on Desktop -->
-    <div class="header-wrapper">
-        <header class="header-graphic">
-            <svg style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.35;" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
-                <circle cx="20" cy="80" r="30" fill="#A8D8EA" />
-                <circle cx="80" cy="20" r="40" fill="#E8A87C" />
-                <circle cx="60" cy="70" r="20" fill="#C3B1E1" />
-                <path d="M0,50 Q50,0 100,50 T200,50" stroke="#A8E6CF" stroke-width="0.5" fill="none" />
-            </svg>
-            <div class="header-content">
-                <div class="date-badge">📅 27 Şubat 2026, Cuma</div>
-                <h1>Günaydın, Fatih.</h1>
-                <div style="font-size: var(--text-small); color: #7A7A7A; margin-top:4px;">📍 Doha, Katar</div>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#F6F6F7;">
+      <tr>
+        <td align="center" style="padding:0 12px 24px 12px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px; width:100%;">
+            <tr>
+              <td style="padding:6px 14px; background-color:#D0D3DC; color:#4B5563; font-size:11px; text-align:right;">
+                SON GUNCELLEME: 09:23:52 (Qatar)
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px; background-color:#FFFFFF; border:1px solid #D0D3DC; border-top:none;">
+                <p style="display:inline-block; margin:0 0 8px 0; font-size:12px; color:#C85826; background-color:#FDEDE5; border:1px solid #F7CBB5; border-radius:8px; padding:4px 8px;">
+                  📅 27 Şubat 2026, Cuma
+                </p>
+                <p style="margin:0; font-size:30px; line-height:1.15; font-weight:800; color:#1F2933;">Gunaydin, Fatih.</p>
+                <p style="margin:6px 0 0 0; font-size:13px; color:#4B5563;">📍 Doha, Katar</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:10px 18px 8px 18px;">
+                <p style="margin:0; font-size:12px; color:#4B5563; line-height:1.5;">
+                  <a href="#odak" style="color:#2B7CAB; text-decoration:none;">Odak</a> ·
+                  <a href="#hava" style="color:#2B7CAB; text-decoration:none;">Hava</a> ·
+                  <a href="#astro" style="color:#2B7CAB; text-decoration:none;">Astro</a> ·
+                  <a href="#karar" style="color:#2B7CAB; text-decoration:none;">Karar</a> ·
+                  <a href="#is" style="color:#2B7CAB; text-decoration:none;">Is</a> ·
+                  <a href="#finans" style="color:#2B7CAB; text-decoration:none;">Finans</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 18px 14px 18px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="height:4px; background-color:#6EB6E8;" width="33%"></td>
+                    <td style="height:4px; background-color:#26B46D;" width="34%"></td>
+                    <td style="height:4px; background-color:#EE763A;" width="33%"></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 18px;">
+                <div class="section-wrapper" id="odak" style="padding:0 0 12px 0;">
+    <div class="card" style="background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:12px;padding:16px;margin-bottom:10px;">
+        <p style="margin-bottom:8px; font-weight:bold;">Günün Mottosu:</p>
+        <p style="margin-bottom:8px; font-style:italic;">Sezgi. Empati. Denge.</p>
+        <p>Bugün yoğun <span class="tag tag-blue" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#EAF3FA;color:#2B7CAB;border:1px solid #CDE4F4;">duygusal dalgalanmalar</span> ve <span class="tag tag-lavender" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#EEF4F8;color:#4B5563;border:1px solid #D0D3DC;">içe dönük düşünceler</span> günün ana temasını oluşturuyor. Ay Yengeç'te, Jüpiter Retro ile birleşirken, Balık'taki Güneş, Merkür (Retro) ve Venüs, hassasiyeti ve <span class="tag tag-gold" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#FDEDE5;color:#C85826;border:1px solid #F7CBB5;">sanatsal ilhamı</span> artırıyor. Pratik adımlar atarken sezgilerine güven.</p>
+    </div>
+</div>
+
+<div class="section-wrapper" id="hava" style="padding:0 0 12px 0;">
+    <div class="weather-card" style="background-color:#F6F6F7;border:1px solid #D0D3DC;border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div class="weather-icon-wrap" style="margin-bottom:10px;">
+            <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2600.png" alt="Gunesli" width="40" height="40" style="display:block;width:40px;height:40px;border:0;outline:none;margin:0 0 8px 0;"></img>
+            <div class="weather-summary" style="font-size:15px;color:#1F2933;line-height:1.5;">Doha: Genel olarak açık ve sıcak bir gün sizi bekliyor. Min 14°C / Max 27°C.</div>
+        </div>
+        <div class="weather-periods" style="margin-top:8px;">
+            <div class="weather-period" style="background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:10px;padding:10px;margin-bottom:8px;font-size:14px;color:#1F2933;line-height:1.45;"><strong>Sabah (06:00-11:00):</strong> Hava açık, 14°C'den 23°C'ye doğru ısınacak. Rüzgar hafif.</div>
+            <div class="weather-period" style="background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:10px;padding:10px;margin-bottom:8px;font-size:14px;color:#1F2933;line-height:1.45;"><strong>Öğle (12:00-14:00):</strong> Güneşli ve sıcak, 25°C ile 27°C arası. Nem oranı düşecek.</div>
+            <div class="weather-period" style="background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:10px;padding:10px;margin-bottom:8px;font-size:14px;color:#1F2933;line-height:1.45;"><strong>Akşam (18:00-23:00):</strong> Az bulutlu başlayıp parçalı bulutluya dönecek, 23°C'den 19°C'ye serinleyecek. Rüzgar akşam saatlerinde hızını artırabilir.</div>
+        </div>
+        <p style="margin-top:8px; font-size:12px; color:#4B5563;">Veri zamanı: 27.02.2026 09:23</p>
+        <p style="margin-top:8px;"><em>Ne giymeliyim: Sabah serinliği için ince bir katman, öğlen hafif ve nefes alan kıyafetler. Akşama doğru hava serinleyebilir, yanına ince bir hırka al.</em></p>
+    </div>
+</div>
+
+<div class="section-wrapper" id="astro" style="padding:0 0 12px 0;">
+    <p style="margin-bottom:8px; font-weight:bold;">Astroloji Özeti:</p>
+    <p style="margin-bottom:8px;">Bugün gökyüzünde yoğun bir <span class="tag tag-lavender" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#EEF4F8;color:#4B5563;border:1px solid #D0D3DC;">Balık burcu enerjisi</span> hâkim. Güneş, geri giden Merkür ve Venüs Balık burcunda seyrediyor. Bu durum, senin İkizler Güneş'in ve Aslan Yükselen'inin daha <span class="tag tag-blue" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#EAF3FA;color:#2B7CAB;border:1px solid #CDE4F4;">sezgisel</span> ve <span class="tag tag-gold" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#FDEDE5;color:#C85826;border:1px solid #F7CBB5;">duygusal</span> yönünü ortaya çıkarabilir. Mantık yerine iç sesine kulak verme eğiliminde olabilirsin. Özellikle geri giden Merkür, geçmişteki konuları tekrar gündeme getirebilir; bu, tamamlanmamış işleri veya yanlış anlaşılmaları gözden geçirmek için bir fırsat.</p>
+    <p style="margin-bottom:8px;">Ay'ın Yengeç burcunda, Jüpiter (Retro) ile yakın seyri, <span class="tag tag-green" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#E9F8F0;color:#1D8F56;border:1px solid #BEE8D0;">ev ve ailevi konulara</span>, köklerine ve kişisel güvenliğine yönelik derin bir odaklanmayı beraberinde getiriyor. Natal Ay'ın Terazi'de olması bu Yengeç enerjisiyle birleştiğinde, ilişkilerde daha fazla şefkat ve empati arayışı içinde olabilirsin. Sevdiklerinle bağlarını güçlendirmek için harika bir gün.</p>
+    <p style="margin-bottom:8px;">Diğer yandan, Koç burcundaki Satürn ve Neptün, yeni başlangıçlar için <span class="tag tag-red" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#FDEDE5;color:#C85826;border:1px solid #F7CBB5;">disiplin ve vizyon</span> gerekliliğini vurguluyor. Bu, Aslan Yükselen'inle uyum içinde, hedeflerine ulaşmak için somut adımlar atmaya teşvik edebilir ancak Balık'ın belirsizliğiyle karışık bir enerji yaratabilir. Kararlarında dengeyi bulmak önem taşıyor.</p>
+    <p style="margin-bottom:8px;"><strong>Günün Odak Noktaları:</strong></p>
+    <ul class="bullet-list" style="margin:0;padding-left:18px;">
+        <li><span class="tag tag-blue" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#EAF3FA;color:#2B7CAB;border:1px solid #CDE4F4;">Duygusal Hassasiyet:</span> İç sesini dinle, empati kur.</li>
+        <li><span class="tag tag-gold" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#FDEDE5;color:#C85826;border:1px solid #F7CBB5;">Geçmişle Yüzleşme:</span> Merkür Retrosu, eski konuları gözden geçirmek için fırsat.</li>
+        <li><span class="tag tag-green" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#E9F8F0;color:#1D8F56;border:1px solid #BEE8D0;">Ev ve Aile:</span> Sevdiklerinle vakit geçir, bağlarını güçlendir.</li>
+    </ul>
+    <div class="card" style="background-color:#E0F2FE; border-left:4px solid #3B82F6; padding:12px; margin-top:20px;background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:12px;padding:16px;margin-bottom:10px;">
+        <h4>Astro-Bilişsel Uyarı:</h4>
+        <p style="margin-bottom:0; font-size:14px; color:#1E40AF;">Balık burcunun yoğun enerjisi, gerçeklik algını bulanıklaştırabilir. Merkür Retrosu ise iletişimde yanlış anlaşılmalara yol açabilir. Bugün önemli kararlar alırken <span style="font-weight:bold;">sezgilerini kullan ama bilgileri de iki kez kontrol et.</span> Duygusal tepkilerde aşırıya kaçmamaya özen göster.</p>
+    </div>
+    <div style="margin-top:24px;">
+        <p style="margin-bottom:8px; font-weight:bold;">Kaynaklar:</p>
+        <a href="https://www.dincerguner.com/" class="source-link" style="display:block; margin-bottom:4px; font-size:14px; color:#2563EB; text-decoration:none;color:#2B7CAB;text-decoration:underline;">Dinçer Güner Web</a>
+        <a href="https://x.com/Hande_Kazanova" class="source-link" style="display:block; margin-bottom:4px; font-size:14px; color:#2563EB; text-decoration:none;color:#2B7CAB;text-decoration:underline;">Hande Kazanova X/Twitter</a>
+        <a href="https://www.onerdoser.com/" class="source-link" style="display:block; margin-bottom:4px; font-size:14px; color:#2563EB; text-decoration:none;color:#2B7CAB;text-decoration:underline;">Öner Döşer Web</a>
+        <a href="https://www.chani.com/" class="source-link" style="display:block; margin-bottom:4px; font-size:14px; color:#2563EB; text-decoration:none;color:#2B7CAB;text-decoration:underline;">Chani Nicholas Web/App</a>
+        <a href="https://astrostyle.com/" class="source-link" style="display:block; font-size:14px; color:#2563EB; text-decoration:none;color:#2B7CAB;text-decoration:underline;">The AstroTwins Web</a>
+    </div>
+</div>
+
+<div class="section-wrapper" id="karar" style="padding:0 0 12px 0;">
+    <p style="margin-bottom:8px; font-weight:bold;">Günün Karar Alanları:</p>
+    <div class="decision-grid" style="margin-top:8px;">
+        <div class="decision-box" style="background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:10px;padding:10px;margin-bottom:8px;">
+            <div class="d-icon d-good" style="font-size:16px;margin-right:6px;color:#26B46D;">✅</div>
+            <div class="d-label" style="font-size:12px;color:#4B5563;font-weight:600;">En İyi Alanlar</div>
+            <div class="d-val" style="font-size:14px;font-weight:700;color:#1F2933;">
+                <p><strong>Duygusal Paylaşım:</strong> Aile ve yakın çevrenle bağları güçlendirmek.</p>
+                <p><strong>Yaratıcı Çalışmalar:</strong> İlham gerektiren sanatsal veya sezgisel projeler.</p>
+                <p><strong>İçe Dönüş:</strong> Meditasyon, kişisel gelişim üzerine düşünmek.</p>
             </div>
-        </header>
-    </div>
-
-    <!-- Navigation -->
-    <nav class="toc-scroller">
-        <a href="#odak" class="toc-link">Odak</a>
-        <a href="#hava" class="toc-link">Hava</a>
-        <a href="#astro" class="toc-link">Astro</a>
-        <a href="#karar" class="toc-link">Karar</a>
-        <a href="#is" class="toc-link">İş</a>
-        <a href="#finans" class="toc-link">Finans</a>
-    </nav>
-    <div class="toc-progress"><div class="toc-progress-bar" id="tocProgress"></div></div>
-
-    <!-- Mood Band - decorative gradient strip -->
-    <div class="mood-band"></div>
-
-    <div class="container">
-        <!-- AI GENERATED CONTENT INJECTED HERE -->
-        <div class="section-wrapper" id="odak">
-    <h2>Odak Çapası</h2>
-    <div class="card" style="border-left: 4px solid var(--accent-primary);">
-        <p style="font-size:0.95rem; margin-bottom: 8px;"><strong>Motto:</strong> "Sezgilerine güven, detayları sorgula."</p>
-        <p style="font-size:0.95rem;"><strong>3 Kelime Kuralı:</strong> <span class="tag tag-gold">Sezgi</span>, <span class="tag tag-blue">Analiz</span>, <span class="tag tag-green">Esneklik</span></p>
-    </div>
-    <p style="font-size:0.95rem; margin-top: 12px; line-height: 1.5;">Dün belki biraz daha hevesli ama dağınık hissediyordun, bugün ise Ay'ın Yengeç'teki konumuyla içe dönük, güven arayan ve duygusal bir moddasın. Balık burcundaki yoğun gezegen trafiği bu hassasiyeti artırıyor, içsel rehberliğe daha çok ihtiyaç duyabilirsin.</p>
-</div>
-
-<div class="section-wrapper" id="hava">
-    <h2>Doha Hava Durumu</h2>
-    <div class="weather-card">
-        <div class="weather-icon-wrap">
-            <svg width="52" height="52" viewbox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="26" cy="26" r="12" fill="#F6D87E" stroke="#E8A87C" stroke-width="2"></circle><g stroke="#E8A87C" stroke-width="2" stroke-linecap="round"><line x1="26" y1="4" x2="26" y2="10"></line><line x1="26" y1="42" x2="26" y2="48"></line><line x1="4" y1="26" x2="10" y2="26"></line><line x1="42" y1="26" x2="48" y2="26"></line><line x1="10.4" y1="10.4" x2="14.6" y2="14.6"></line><line x1="37.4" y1="37.4" x2="41.6" y2="41.6"></line><line x1="10.4" y1="41.6" x2="14.6" y2="37.4"></line><line x1="37.4" y1="14.6" x2="41.6" y2="10.4"></line></g></svg>
-            <div class="weather-summary" style="font-size:0.95rem;">Bugün Doha'da güneşli ve sıcak bir gün seni bekliyor, öğleden sonra sıcaklıklar zirve yapacak.</div>
         </div>
-        <div class="weather-periods" style="font-size:0.95rem;">
-            <div class="weather-period"><strong>Sabah (06:00-09:00):</strong> 14°C - 19°C, <span class="tag tag-blue">Açık</span>, Rüzgar: 4-7 km/s</div>
-            <div class="weather-period"><strong>Öğle (12:00-15:00):</strong> 25°C - 27°C, <span class="tag tag-blue">Açık / Az bulutlu</span>, Rüzgar: 3-8 km/s</div>
-            <div class="weather-period"><strong>Akşam (18:00-21:00):</strong> 23°C - 20°C, <span class="tag tag-blue">Az bulutlu / Parçalı bulutlu</span>, Rüzgar: 7-11 km/s</div>
+        <div class="decision-box" style="background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:10px;padding:10px;margin-bottom:8px;">
+            <div class="d-icon d-neutral" style="font-size:16px;margin-right:6px;color:#4B5563;">〰️</div>
+            <div class="d-label" style="font-size:12px;color:#4B5563;font-weight:600;">Nötr Alanlar</div>
+            <div class="d-val" style="font-size:14px;font-weight:700;color:#1F2933;">
+                <p><strong>Yeni Sözleşmeler:</strong> Detayları iki kez kontrol et, Merkür Retrosu riskli.</p>
+                <p><strong>Büyük Lansmanlar:</strong> Enerji daha içe dönük, erteleme düşünülebilir.</p>
+                <p><strong>Yoğun Sosyalleşme:</strong> Enerjin dalgalı olabilir, kendini zorlama.</p>
+            </div>
         </div>
-        <p style="margin-top:8px; font-size:0.8rem; color:#7A7A7A;">Veri zamanı: 27.02.2026 08:42</p>
-        <p style="margin-top:8px; font-size:0.95rem;"><em>Ne giymeliyim: Sabah serinliği için ince bir ceket, öğlen sıcakları için açık renk, nefes alan kıyafetler ideal. Akşama doğru hafif bir rüzgar eşlik edebilir.</em></p>
-    </div>
-</div>
-
-<div class="section-wrapper" id="astro">
-    <h2>Horoskop: Günün Kozmik Pusulası</h2>
-    <p style="font-size:0.95rem; line-height: 1.5;">Sevgili Fatih, bugün gökyüzünde yoğun bir <span class="tag tag-lavender">Balık burcu</span> enerjisi var; Güneş (Balık 8.6°), Merkür (Balık 22.5° Retro) ve Venüs (Balık 21.0°) bu rüya gibi burçta, senin <span class="tag tag-gold">İkizler Güneş'inle</span> (23.2°) kare açılar kuruyor. Bu durum, mantık ve sezgi, somut gerçekler ve soyut hayaller arasında ince bir denge kurman gerektiğini işaret ediyor. Özellikle <span class="tag tag-red">Merkür Balık retrosu</span>, senin o keskin İkizler zekana bir mola verdirip, kararlarını acele etmeden, iç sesini dinleyerek gözden geçirmeni fısıldıyor. Aynı zamanda <span class="tag tag-gold">Yükselen Aslan</span> kişiliğinle ön plana çıkma arzun, Balık enerjisinin getirdiği geri çekilme ve empati isteğiyle birleşerek farklı bir ifade biçimi bulabilir. Liderlik etme şeklin bu aralar daha şefkatli ve anlayışlı olabilir.</p>
-
-    <p style="font-size:0.95rem; line-height: 1.5;">Duygusal cephede, <span class="tag tag-blue">Ay Yengeç'te</span> (14.4°) ve retro <span class="tag tag-blue">Jüpiter Yengeç'le</span> (15.3°) çok yakın bir kavuşumda. Bu, natal haritandaki <span class="tag tag-green">Yengeç Venüs'ünü</span> (11.7°) tetikliyor. Aile, ev ve kişisel güvenliğin ön planda olduğu bir gün. Sezgilerin çok güçlü çalışabilir, içsel bir rehberlik hissi yaşayabilirsin. Retro Jüpiter, duygusal ve finansal genişlemeni yeniden değerlendirme fırsatı sunarken, bu konularda aşırıya kaçmamaya dikkat çekiyor. İlişkilerde ise <span class="tag tag-gold">Ay Terazi</span> natal konumunla, duygusal ihtiyaçların ve denge arayışın arasında uyum bulmaya çalışabilirsin.</p>
-
-    <p style="font-size:0.95rem; line-height: 1.5;">İş ve finans alanında, <span class="tag tag-red">Merkür retrosu</span> tüm anlaşma ve iletişim süreçlerinde ekstra dikkatli olmanı gerektiriyor. Yeni başlangıçlar yerine, mevcut projeleri gözden geçirmek, eksikleri tamamlamak için harika bir zaman. <span class="tag tag-blue">Mars Kova'da</span> (27.4°), sana yenilikçi ve sosyal projelere enerji harcama ilhamı verirken, <span class="tag tag-gold">Plüton Kova'nın</span> (4.5°) başlangıcı toplumsal değişim ve kolektif hedeflerle ilgili derin dönüşümleri işaret ediyor. Bu durum, kariyerinde alışılmışın dışında fikirleri benimseme ve sosyal fayda odaklı işlere yönelme potansiyeli yaratabilir. Ayrıca, <span class="tag tag-blue">Satürn Koç'ta</span> (1.5°) yeni sorumluluklar ve girişimler için zemin hazırlıyor, ama ilk adımlarını sağlam atmalısın.</p>
-
-    <p style="font-size:0.95rem; line-height: 1.5;">Unutma ki Balık enerjisi seni daha duyarlı ve fedakar yapabilir. Ancak <span class="tag tag-gold">Yükselen Aslan</span>, bu hassasiyetin içinde bile özgünlüğünü ve parlaklığını korumanı hatırlatır. Kendi iç sesini dinle, ancak dış dünyayla olan bağlantılarını da göz ardı etme. Bugünü, hem içsel derinleşme hem de dışarıya karşı bilge ve şefkatli bir duruş sergileme fırsatı olarak gör.</p>
-
-    <ul class="bullet-list">
-        <li>Duygusal dalgalanmalar normaldir; <span class="tag tag-blue">Ay Yengeç</span> konumuyla kendini güvende hissedeceğin ortamlara yönel. Ev ve ailevi konulara öncelik verebilirsin.</li>
-        <li><span class="tag tag-red">Merkür Retrosu</span> (Balık) nedeniyle önemli kararları ertele, detayları tekrar kontrol et ve sözleşmeleri dikkatle incele. Bugün "kesin" diyeceğin her şeyi bir kez daha sorgula.</li>
-        <li><span class="tag tag-gold">Yükselen Aslan</span> ve <span class="tag tag-blue">Jüpiter Yengeç</span> kavuşumuyla, sezgisel liderlik yeteneğini şefkatle birleştir. Fırsatları iyi değerlendir ama aşırıya kaçmaktan sakın.</li>
-    </ul>
-
-    <div class="card" style="background: #EDE7F6; margin-top: 20px;">
-        <h4>Astro-Bilişsel Uyarı!</h4>
-        <p style="font-size:0.95rem;">Bugün Balık'taki Merkür retrosu ve Güneş-Venüs'ün İkizler Güneş'ine yaptığı kareler, zihinsel bulanıklık ve iletişimde yanlış anlaşılmalara yol açabilir. "Ben kesin biliyorum" demek yerine "Acaba bir de şöyle mi düşünsem?" demek, sana çok şey kazandırır. Detayları iki kez kontrol et, e-postaları yollamadan önce bir daha oku!</p>
-    </div>
-
-    <h4>Günün Astroloji Kaynakları</h4>
-    <p style="font-size:0.95rem; line-height: 1.6;">
-        <a href="https://x.com/dincerguner" target="_blank">Dinçer Güner (X/Twitter)</a> |
-        <a href="https://www.instagram.com/handekazanova/" target="_blank">Hande Kazanova (Instagram)</a> |
-        <a href="https://www.onerdoser.com/" target="_blank">Öner Döşer (Web)</a> |
-        <a href="https://www.chani.com/" target="_blank">Chani Nicholas (Web/App)</a> |
-        <a href="https://astrostyle.com/" target="_blank">The AstroTwins (Web)</a>
-    </p>
-    <h4>Okuma Önerisi</h4>
-    <p style="font-size:0.95rem;">
-        <a href="https://www.amazon.com/Only-Astrology-Book-Youll-Ever/dp/0879800685" target="_blank">"The Only Astrology Book You'll Ever Need" - Joanna Martine Woolfolk</a>
-    </p>
-</div>
-
-<div class="section-wrapper" id="karar">
-    <h2>Karar Zaman Haritası</h2>
-    <div class="decision-grid">
-        <div class="decision-box" style="font-size:0.95rem;">
-            <svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z" fill="#D4EDDA"></path><path d="M16 10L11 15L8 12" stroke="#4CAF50" stroke-width="2"></path></svg>
-            <p><strong>EN İYİ</strong></p>
-            <p style="color:#7A7A7A;">09:00 - 13:00</p>
-            <p>Sezgisel yaklaşımlar, ailevi konular, duygusal destek gerektiren durumlar. Ay'ın natal Venüs ve transit Jüpiter'le kavuşumu, içsel rahatlık ve fırsatlar sunuyor.</p>
-        </div>
-        <div class="decision-box" style="font-size:0.95rem;">
-            <svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z" fill="#FFECB3"></path><path d="M12 8V12L14 14" stroke="#FFC107" stroke-width="2"></path></svg>
-            <p><strong>NÖTR</strong></p>
-            <p style="color:#7A7A7A;">14:00 - 18:00</p>
-            <p>Rutin işler ve planlama. Önemli kararlar için sakin kalmaya özen göster, detayları atlamamaya çalış. Fırsatlar var ama Merkür retrosu halen devrede.</p>
-        </div>
-        <div class="decision-box" style="font-size:0.95rem;">
-            <svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z" fill="#FFCDD2"></path><path d="M15 9L9 15M9 9L15 15" stroke="#F44336" stroke-width="2"></path></svg>
-            <p><strong>KAÇIN</strong></p>
-            <p style="color:#7A7A7A;">Tüm Gün (Özellikle 08:00 - 11:00 & 19:00 - 22:00)</p>
-            <p>Yeni ve geri dönülmez anlaşmalar, kritik yazılı iletişimler, hızlı finansal kararlar. Merkür retrosu ve Balık enerjisinin belirsizliği nedeniyle dikkatli ol.</p>
+        <div class="decision-box" style="background-color:#FFFFFF;border:1px solid #D0D3DC;border-radius:10px;padding:10px;margin-bottom:8px;">
+            <div class="d-icon d-bad" style="font-size:16px;margin-right:6px;color:#EE763A;">❌</div>
+            <div class="d-label" style="font-size:12px;color:#4B5563;font-weight:600;">Kaçınılması Gerekenler</div>
+            <div class="d-val" style="font-size:14px;font-weight:700;color:#1F2933;">
+                <p><strong>Aceleci Finans Kararları:</strong> Özellikle Balık enerjisiyle yanıltıcı olabilir.</p>
+                <p><strong>Sert Tartışmalar:</strong> Duygusal hassasiyet yüksek, yanlış anlaşılmalar kolaylaşabilir.</p>
+                <p><strong>Gerçeklerden Kopma:</strong> Hayal gücünü kullan ama ayakların yere bassın.</p>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="section-wrapper" id="is">
-    <h2>İş & Kariyer Rehberi</h2>
-    <ul class="bullet-list">
-        <li><span class="tag tag-red">Merkür Balık Retrosu:</span> E-postaları, raporları ve sözleşmeleri üç kez kontrol et. Yanlış anlaşılmalar veya gözden kaçan detaylar can sıkabilir. Yeni bir proje başlatmak yerine, eskileri toparla ve eksiklerini tamamla.</li>
-        <li><span class="tag tag-blue">Ay Yengeç & Jüpiter Yengeç:</span> İş ortamında empati ve şefkatli bir yaklaşım sergilemek, ekip içi uyumu artıracaktır. Hassas konuları çözmek için iyi bir zaman olabilir, içsel bilgeliğine güven.</li>
-        <li><span class="tag tag-gold">Yükselen Aslan Liderliği:</span> Sezgisel içgörülerini kullanarak liderlik et. Toplantılarda ortamı yumuşatan, herkesin kendini güvende hissetmesini sağlayan bir rol üstlenebilirsin. Bu, karizmana yeni bir boyut katabilir.</li>
-        <li><span class="tag tag-lavender">Mars Kova & Plüton Kova:</span> Toplumsal fayda odaklı, inovatif projelere ilgi duyabilirsin. Geleceğe yönelik stratejileri gözden geçirirken, daha insancıl ve kolektif bir bakış açısı benimse. Kariyerinde değişim rüzgarları esiyor olabilir.</li>
+<div class="section-wrapper" id="is" style="padding:0 0 12px 0;">
+    <p style="margin-bottom:8px; font-weight:bold;">İş Gündemi:</p>
+    <ul class="bullet-list" style="margin:0;padding-left:18px;">
+        <li>Bugün <span class="tag tag-gold" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#FDEDE5;color:#C85826;border:1px solid #F7CBB5;">yaratıcı ve sezgisel yaklaşımlar</span> gerektiren problemlere odaklan.</li>
+        <li>Ekip içinde <span class="tag tag-green" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#E9F8F0;color:#1D8F56;border:1px solid #BEE8D0;">empati ve anlayışı</span> ön planda tut.</li>
+        <li>Önemli e-postaları veya dokümanları göndermeden önce <span class="tag tag-red" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#FDEDE5;color:#C85826;border:1px solid #F7CBB5;">bir kez daha kontrol et</span> (Merkür Retro etkisi).</li>
+        <li>Geçmişte üzerinde çalıştığın ancak sonuca ulaşamadığın projelere <span class="tag tag-blue" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#EAF3FA;color:#2B7CAB;border:1px solid #CDE4F4;">tekrar göz atma</span> fırsatı bulabilirsin.</li>
     </ul>
 </div>
 
-<div class="section-wrapper" id="finans">
-    <h2>Finansal Nabız</h2>
-    <p style="margin-bottom: 10px; font-size:0.8rem; color:#7A7A7A;">Veri zamanı: 25.02.2026 19:00 (US/Eastern) — Piyasa kapalı (saat dışı)</p>
-    <ul class="finance-list">
-        <li>
-            <span class="ticker-pill">QQQI</span>: <strong>$52.57</strong> (<span style="color:#E53935;">-1.02%</span> aşağı)
-            <br><em>Davranışsal Not:</em> Nasdaq 100 odaklı bir ETF olarak, son günlük düşüşe rağmen 5 günlük performansı pozitif. Merkür retrosu, anlık tepkiler yerine uzun vadeli stratejiyi ve derinlemesine araştırmayı öne çıkarıyor. Mevcut pozisyonları gözden geçir, acele satış veya alımdan kaçın.
-        </li>
-        <li>
-            <span class="ticker-pill">FDVV</span>: <strong>$59.41</strong> (<span style="color:#E53935;">-0.20%</span> aşağı)
-            <br><em>Davranışsal Not:</em> Yüksek temettü verimiyle bilinen bu fon, temkinli bir piyasada daha istikrarlı bir duruş sergileyebilir. Ay Yengeç'teki Jüpiter retrosu, finansal güvenlik ve uzun vadeli değer arayışını vurguluyor. Pozisyonları korumak ve ekleme için dip seviyeleri beklemek mantıklı olabilir.
-        </li>
-        <li>
-            <span class="ticker-pill">SCHD</span>: <strong>$31.51</strong> (<span style="color:#4CAF50;">+0.00%</span> yukarı)
-            <br><em>Davranışsal Not:</em> Günlük değişimi sıfır olsa da, son 5 günde hafif düşüş var. Kaliteli temettü hisselerine yatırım yapan bu fon, Jüpiter retrosuyla birlikte finansal büyümeyi yeniden yapılandırma ihtiyacını gösteriyor. Temkinli ve sabırlı bir yaklaşımla, portföy çeşitliliğini koru.
-        </li>
-        <li>
-            <span class="ticker-pill">SCHG</span>: <strong>$30.96</strong> (<span style="color:#E53935;">-0.77%</span> aşağı)
-            <br><em>Davranışsal Not:</em> Büyüme hisselerine odaklı bu fon, Balık burcundaki Merkür ve Venüs'ün etkisiyle belirsizlik barındırabilir. Yüksek volatiliteye karşı dikkatli ol, duygusal kararlardan kaçın. Mevcut pozisyonlarını gözden geçir ve risk toleransını yeniden değerlendir.
-        </li>
-        <li>
-            <span class="ticker-pill">IAUI</span>: <strong>$63.24</strong> (<span style="color:#4CAF50;">+0.72%</span> yukarı)
-            <br><em>Davranışsal Not:</em> Altın ETF'si. Ay'ın Yengeç'te olması ve Balık enerjisinin yoğunluğu, değerli metallere olan ilgiyi artırabilir. Güvenli liman arayışı içinde olanlar için pozitif bir işaret. Kısa vadeli yükselişler cazip olsa da, Merkür retrosunda ani alım-satım kararlarından kaçın.
-        </li>
-        <li>
-            <span class="ticker-pill">SLV</span>: <strong>$80.45</strong> (<span style="color:#4CAF50;">+0.51%</span> yukarı)
-            <br><em>Davranışsal Not:</em> Gümüş ETF'si. Son 5 günlük %5'lik artış dikkat çekici. Ay'ın Yengeç'te olması ve Jüpiter retrosu, piyasada bir "güvenli liman" arayışı ve değer odaklı yatırım eğilimini güçlendiriyor. Ancak, Plüton Kova'da ve Mars Kova'da iken, ani dalgalanmalara karşı temkinli ol. Kâr realizasyonu veya kademeli alım stratejilerini düşün.
-        </li>
+<div class="section-wrapper" id="finans" style="padding:0 0 12px 0;">
+    <p style="margin-bottom:8px;">Veri zamanı: 25.02.2026 19:00 (US/Eastern) — Piyasa kapalı (saat dışı)</p>
+    <p style="margin-bottom:8px; font-weight:bold;">Piyasa Özeti (Seçili Varlıklar):</p>
+    <ul class="finance-list" style="list-style:none;padding:0;margin:0;">
+        <li><span class="ticker-pill" style="display:inline-block;background-color:#FDEDE5;border:1px solid #F7CBB5;border-radius:4px;padding:2px 8px;color:#C85826;font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;">QQQI</span>: $52.57 <span style="color:#EF4444;">(-1.02%)</span> - Teknoloji sektöründe hafif düşüş var. Kısa vadeli dalgalanmaları iyi analiz et.</li>
+        <li><span class="ticker-pill" style="display:inline-block;background-color:#FDEDE5;border:1px solid #F7CBB5;border-radius:4px;padding:2px 8px;color:#C85826;font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;">FDVV</span>: $59.41 <span style="color:#EF4444;">(-0.20%)</span> - Değer odaklı fonlarda minör bir geri çekilme. Uzun vadeli stratejine sadık kal.</li>
+        <li><span class="ticker-pill" style="display:inline-block;background-color:#FDEDE5;border:1px solid #F7CBB5;border-radius:4px;padding:2px 8px;color:#C85826;font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;">SCHD</span>: $31.51 <span style="color:#22C55E;">(+0.00%)</span> - Temettü fonu sabit kalmış. İstikrarlı getiri arayanlar için nötr bir gösterge.</li>
+        <li><span class="ticker-pill" style="display:inline-block;background-color:#FDEDE5;border:1px solid #F7CBB5;border-radius:4px;padding:2px 8px;color:#C85826;font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;">SCHG</span>: $30.96 <span style="color:#EF4444;">(-0.77%)</span> - Büyüme hisselerinde düşüş eğilimi. Risk iştahına göre pozisyonlarını gözden geçir.</li>
+        <li><span class="ticker-pill" style="display:inline-block;background-color:#FDEDE5;border:1px solid #F7CBB5;border-radius:4px;padding:2px 8px;color:#C85826;font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;">IAUI</span>: $63.24 <span style="color:#22C55E;">(+0.72%)</span> - Altın varlıkları yükselişte. Piyasadaki belirsizliklere karşı iyi bir sığınak olabilir.</li>
+        <li><span class="ticker-pill" style="display:inline-block;background-color:#FDEDE5;border:1px solid #F7CBB5;border-radius:4px;padding:2px 8px;color:#C85826;font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;">SLV</span>: $80.45 <span style="color:#22C55E;">(+0.51%)</span> - Gümüş de pozitif seyrediyor. Son 5 günde güçlü bir ivme yakalamış. Takipte kal.</li>
     </ul>
+    <p style="margin-top:16px; font-size:12px; color:#4B5563;"><em>Not: Balık burcunun getirdiği yanıltıcı enerjiler, finansal piyasalardaki hızlı kararlar için uygun olmayabilir. Özellikle Merkür Retrosu varken piyasa analizlerini derinlemesine yap.</em></p>
 </div>
 
-<div class="section-wrapper" id="tek-soru">
-    <h2>Tek Soru</h2>
-    <p style="font-size:0.95rem; line-height: 1.5;">Bugün, sezgilerin ve mantığın arasında denge kurmaya çalışırken, gerçekten "ne hissetmek" seni güvende ve tatmin olmuş hissettirir ve buna nasıl ulaşabilirsin?</p>
+<div class="section-wrapper" style="padding:0 0 12px 0;">
+    <p style="margin-bottom:8px; font-weight:bold;">Günün Tek Sorusu:</p>
+    <p>Bugün, <span class="tag tag-lavender" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#EEF4F8;color:#4B5563;border:1px solid #D0D3DC;">sezgisel rehberliğin</span> mi yoksa <span class="tag tag-blue" style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:8px;letter-spacing:0.3px;background-color:#EAF3FA;color:#2B7CAB;border:1px solid #CDE4F4;">mantıksal analizin</span> mi sana daha doğru yolu göstereceğine inanıyorsun ve neden?</p>
 </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-            <p>Okuma süresi: ~2.5 dk</p>
-            <p class="data-freshness">Veri tazeliği: Hava 27.02.2026 08:42 — Finans 25.02.2026 19:00 (Piyasa kapalı (saat dışı))</p>
-            <p style="opacity: 0.5;">© 2026 Morning Brief - Fatih</p>
-        </div>
-    </div>
-    <script>
-        const tocLinks = Array.from(document.querySelectorAll(".toc-link"));
-        const sections = tocLinks.map(link => document.querySelector(link.getAttribute("href")));
-        const progressBar = document.getElementById("tocProgress");
-
-        const setActive = (id) => {
-            tocLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === ("#" + id)));
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) setActive(entry.target.id);
-            });
-        }, { rootMargin: "-40% 0px -50% 0px", threshold: 0 });
-
-        sections.forEach(section => section && observer.observe(section));
-
-        const onScroll = () => {
-            const doc = document.documentElement;
-            const scrollTop = doc.scrollTop || document.body.scrollTop;
-            const scrollHeight = doc.scrollHeight - doc.clientHeight;
-            const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-            if (progressBar) progressBar.style.width = pct + "%";
-        };
-        document.addEventListener("scroll", onScroll, { passive: true });
-        onScroll();
-    </script>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 18px 24px 18px; text-align:center; border-top:1px solid #D0D3DC;">
+                <p style="margin:0; font-size:12px; color:#4B5563;">Okuma suresi: ~2.5 dk</p>
+                <p style="margin:6px 0 0 0; font-size:12px; color:#4B5563;">Veri tazeligi: Hava 27.02.2026 09:23 — Finans 25.02.2026 19:00 (Piyasa kapalı (saat dışı))</p>
+                <p style="margin:8px 0 0 0; font-size:11px; color:#6B7280;">© 2026 Morning Brief - Fatih</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 </body>
 </html>
