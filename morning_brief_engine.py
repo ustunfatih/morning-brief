@@ -91,7 +91,7 @@ TODOIST_API_TOKEN = _normalize_todoist_token(_env_str("TODOIST_API_TOKEN", ""))
 TODOIST_FILTER = _normalize_todoist_filter(_env_str("TODOIST_FILTER", TODOIST_DEFAULT_FILTER), TODOIST_DEFAULT_FILTER)
 TODOIST_MAX_ITEMS = _env_int("TODOIST_MAX_ITEMS", 8, minimum=1, maximum=20)
 TODOIST_CACHE_TTL_MIN = _env_int("TODOIST_CACHE_TTL_MIN", 10, minimum=1, maximum=180)
-TODOIST_API_BASE = "https://api.todoist.com/rest/v2"
+TODOIST_API_BASE = "https://api.todoist.com/api/v1"
 
 # Fatih's natal chart coordinates (Istanbul, Fatih district)
 NATAL_YEAR, NATAL_MONTH, NATAL_DAY = 1989, 6, 14
@@ -1098,6 +1098,57 @@ def _todoist_request(path, params=None, allow_retry=True, phase="request"):
     except Exception as err:
         raise TodoistAPIError(phase=phase, path=path, details=str(err))
 
+def _todoist_results(payload):
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict):
+        results = payload.get("results")
+        if isinstance(results, list):
+            return results
+    return []
+
+def _parse_todoist_due(due_obj, qatar_tz, now_qatar):
+    due = due_obj or {}
+    due_raw = (due.get("date") or "").strip()
+    due_tz_name = (due.get("timezone") or "").strip()
+
+    due_text = "Tarihsiz"
+    is_overdue = False
+    has_time = False
+    due_sort = float("inf")
+
+    if not due_raw:
+        return due_text, due_sort, is_overdue, has_time
+
+    if "T" in due_raw:
+        try:
+            parsed_dt = datetime.datetime.fromisoformat(due_raw)
+            if parsed_dt.tzinfo is None:
+                if due_tz_name:
+                    due_tz = pytz.timezone(due_tz_name)
+                    due_local = due_tz.localize(parsed_dt).astimezone(qatar_tz)
+                else:
+                    due_local = qatar_tz.localize(parsed_dt)
+            else:
+                due_local = parsed_dt.astimezone(qatar_tz)
+            due_text = due_local.strftime("%d.%m %H:%M")
+            due_sort = due_local.timestamp()
+            is_overdue = due_local < now_qatar
+            has_time = due_local.date() == now_qatar.date()
+            return due_text, due_sort, is_overdue, has_time
+        except Exception:
+            pass
+
+    try:
+        due_date = datetime.date.fromisoformat(due_raw[:10])
+        due_text = due_date.strftime("%d.%m")
+        is_overdue = due_date < now_qatar.date()
+        due_midday = qatar_tz.localize(datetime.datetime(due_date.year, due_date.month, due_date.day, 12, 0))
+        due_sort = due_midday.timestamp()
+        return due_text, due_sort, is_overdue, has_time
+    except Exception:
+        return due_raw, due_sort, is_overdue, has_time
+
 
 def get_todoist_data(now_qatar):
     """Fetch today's Todoist tasks/events in a non-blocking way."""
@@ -1130,11 +1181,12 @@ def get_todoist_data(now_qatar):
         last_task_error = None
         for candidate_filter in filter_candidates:
             try:
-                tasks = _todoist_request(
-                    "/tasks",
-                    params={"filter": candidate_filter},
+                task_payload = _todoist_request(
+                    "/tasks/filter",
+                    params={"query": candidate_filter},
                     phase="tasks_fetch",
                 )
+                tasks = _todoist_results(task_payload)
                 selected_filter = candidate_filter
                 break
             except TodoistAPIError as err:
@@ -1150,7 +1202,7 @@ def get_todoist_data(now_qatar):
         if tasks is None:
             raise last_task_error or TodoistAPIError(
                 phase="tasks_fetch",
-                path="/tasks",
+                path="/tasks/filter",
                 details="Görev listesi alınamadı.",
             )
 
@@ -1158,7 +1210,8 @@ def get_todoist_data(now_qatar):
 
         project_map = {}
         try:
-            projects = _todoist_request("/projects", phase="projects_fetch")
+            projects_payload = _todoist_request("/projects", phase="projects_fetch")
+            projects = _todoist_results(projects_payload)
             project_map = {
                 str(item.get("id")): item.get("name", "Genel")
                 for item in projects
@@ -1181,31 +1234,7 @@ def get_todoist_data(now_qatar):
                 if len(content) > 120:
                     content = content[:117] + "..."
 
-                due = task.get("due") or {}
-                due_text = "Tarihsiz"
-                due_dt = None
-                due_date = None
-                is_overdue = False
-                due_sort = float("inf")
-
-                if due.get("datetime"):
-                    due_dt = _parse_iso_datetime(due.get("datetime"))
-                    if due_dt:
-                        due_local = due_dt.astimezone(qatar_tz)
-                        due_text = due_local.strftime("%d.%m %H:%M")
-                        is_overdue = due_local < now_qatar
-                        due_sort = due_local.timestamp()
-                elif due.get("date"):
-                    try:
-                        due_date = datetime.date.fromisoformat(due.get("date"))
-                        due_text = due_date.strftime("%d.%m")
-                        is_overdue = due_date < now_qatar.date()
-                        due_midday = qatar_tz.localize(datetime.datetime(
-                            due_date.year, due_date.month, due_date.day, 12, 0
-                        ))
-                        due_sort = due_midday.timestamp()
-                    except Exception:
-                        due_text = due.get("date")
+                due_text, due_sort, is_overdue, has_time = _parse_todoist_due(task.get("due"), qatar_tz, now_qatar)
 
                 priority_num = _safe_int(task.get("priority"), 1)
                 project_id = str(task.get("project_id") or "")
@@ -1218,7 +1247,7 @@ def get_todoist_data(now_qatar):
                     "due_text": due_text,
                     "due_sort": due_sort,
                     "is_overdue": is_overdue,
-                    "has_time": bool(due_dt and due_dt.astimezone(qatar_tz).date() == now_qatar.date()),
+                    "has_time": has_time,
                 })
             except Exception as err:
                 print(f"⚠️ Todoist[phase=normalize] bir görev atlandı: {err}")
