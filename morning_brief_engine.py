@@ -14,7 +14,8 @@ from kerykeion import AstrologicalSubjectFactory
 import yfinance as yf
 
 # --- CONFIGURATION ---
-API_KEY = os.environ.get("GEMINI_API_KEY")
+API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
 TIMEZONE = "Asia/Qatar"
 USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, Istanbul"
 CACHE_DIR = ".cache"
@@ -942,12 +943,13 @@ AY BİLGİSİ:
 
 def generate_daily_brief():
     if not API_KEY:
-        print("Error: GEMINI_API_KEY not found.")
+        print("Error: GEMINI_API_KEY (or GOOGLE_API_KEY) not found.")
         return
 
     _validate_html_template_placeholders()
 
     client = genai.Client(api_key=API_KEY)
+    print(f"Using Gemini model: {GEMINI_MODEL}")
     
     # Time Calc
     now_qatar = get_current_time_qatar()
@@ -1080,7 +1082,25 @@ def generate_daily_brief():
     - Tüm metin boyutları tutarlı olsun (0.95rem), başlıklar hariç.
     """
 
-    response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+    try:
+        response = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
+    except Exception as err:
+        err_text = str(err)
+        if "no longer available to new users" in err_text or ("NOT_FOUND" in err_text and "models/" in err_text):
+            print(f"\nGemini model '{GEMINI_MODEL}' is not available for this key/project.")
+            print("Fix:")
+            print("1) Set GEMINI_MODEL to a currently available model (for example: gemini-2.5-flash).")
+            print("2) Re-run after updating the env variable/secret.")
+        if (
+            "PERMISSION_DENIED" in err_text
+            and "generativelanguage.googleapis.com" in err_text
+        ) or "SERVICE_DISABLED" in err_text:
+            print("\nGemini request failed: API key project is not enabled for Generative Language API.")
+            print("Fix:")
+            print("1) Enable Generative Language API on the same project as the API key.")
+            print("2) Rotate GitHub Actions secret GEMINI_API_KEY with the new key.")
+            print("3) Wait 2-10 minutes for propagation, then re-run the workflow.")
+        raise
     
     # Temizlik
     raw_html = response.text.replace("```html", "").replace("```", "").strip()
