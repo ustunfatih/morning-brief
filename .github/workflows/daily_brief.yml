@@ -2,9 +2,9 @@ name: Generate Morning Brief
 
 on:
   schedule:
-    # 04:00 UTC = 07:00 Doha Time (Kış saati/Standart saat farkına dikkat)
+    # GitHub cron uses UTC. 04:00 UTC = 07:00 Asia/Qatar (UTC+3).
     - cron: '0 4 * * *'
-  workflow_dispatch: # Manuel tetikleme butonu
+  workflow_dispatch: # Manual trigger
 
 permissions:
   contents: write
@@ -12,6 +12,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Qatar
 
     steps:
       - name: Checkout code
