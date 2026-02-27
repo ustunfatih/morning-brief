@@ -55,6 +55,7 @@ Copy `.env.example` to `.env` and set:
 - `GEMINI_API_KEY=...` (or `GOOGLE_API_KEY=...`)
 - `GEMINI_MODEL=gemini-2.5-flash` (optional)
 - `GEMINI_IMAGE_MODEL=gemini-2.5-flash-image` (optional, hero image)
+- `HEADER_POOL_SIZE=5` (optional, mood başına üretilecek header varyasyon sayısı)
 - `TODOIST_API_TOKEN=...` (optional, Todoist tasks section)
 - `TODOIST_FILTER="overdue | today"` (optional)
 - `TODOIST_MAX_ITEMS=10` (optional)

@@ -84,7 +84,7 @@ TIMEZONE = "Asia/Qatar"
 USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, İstanbul"
 CACHE_DIR = ".cache"
 HEADER_IMAGE_DIR = os.path.join("assets", "headers")
-HEADER_IMAGE_FILE = "header-latest.png"
+HEADER_POOL_SIZE = _env_int("HEADER_POOL_SIZE", 5, minimum=1, maximum=10)
 FALLBACK_HERO_BG = "#374151"
 TODOIST_DEFAULT_FILTER = "overdue | today"
 TODOIST_API_TOKEN = _normalize_todoist_token(_env_str("TODOIST_API_TOKEN", ""))
@@ -581,17 +581,18 @@ def _todoist_rows_html(items):
         )
 
     rows = []
-    for item in items:
+    for index, item in enumerate(items):
         task_name = html.escape(item.get("content") or "-")
         project = html.escape(item.get("project") or "Genel")
         due_text = html.escape(item.get("due_text") or "Tarihsiz")
         priority = html.escape(item.get("priority") or "P4")
+        row_bg = "#FFFFFF" if index % 2 == 0 else "#F8FAFC"
         row = (
             "<tr>"
-            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:13px; color:#1F2933;">{task_name}</td>'
-            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:12px; color:#4B5563;">{project}</td>'
-            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:12px; color:#4B5563;">{due_text}</td>'
-            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:12px; color:#4B5563; text-align:center;">{priority}</td>'
+            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:13px; color:#1F2933; background-color:{row_bg};">{task_name}</td>'
+            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:12px; color:#4B5563; background-color:{row_bg};">{project}</td>'
+            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:12px; color:#4B5563; background-color:{row_bg};">{due_text}</td>'
+            f'<td style="padding:8px; border:1px solid #D0D3DC; font-size:12px; color:#4B5563; text-align:center; background-color:{row_bg};">{priority}</td>'
             "</tr>"
         )
         rows.append(row)
@@ -796,7 +797,7 @@ def _image_extension_for_mime(mime):
     return "png"
 
 
-def _build_header_image_prompt(mood, raw_html, date_str):
+def _build_header_image_prompt(mood, raw_html, date_str, variant_index):
     themes = _extract_themes(raw_html, limit=5)
     theme_text = ", ".join(themes) if themes else "astroloji, finans, hava, odak"
     return f"""
@@ -804,12 +805,13 @@ Türkçe sabah özeti için modern ve soyut bir kapak görseli üret.
 Tarih bağlamı: {date_str}
 Gün ruh hali: {mood['label']} (ton: {mood['tone']}).
 Temalar: {theme_text}.
+Varyasyon kimliği: set-{variant_index}
 
 Kurallar:
 - Yatay oran: 680x220 (yaklaşık 3.09:1) düşün ve kompozisyonu bu orana göre kur.
 - Görsel soyut olsun; fotoğrafik yüz/insan olmasın.
-- Yazı, harf, logo, watermark, sayı, ikon metni üretme.
-- Renk seti: #F6F6F7, #D0D3DC, #EE763A, #26B46D, #6EB6E8.
+- Yazı, harf, logo, watermark, sembol, sayı, rakam, tipografi, ikon metni üretme.
+- Renk seti: off-white, slate mist, sıcak turuncu vurgu, canlı yeşil, gökyüzü mavisi.
 - Kontrast yüksek ama göz yormayan, premium hissiyat.
 - Parlaklık ruh hali seviyesine göre ayarlansın.
 - Görsel tam dolgu (full-bleed) olsun; üst/alt/yan kenarlarda beyaz veya boş bant bırakma.
@@ -824,7 +826,11 @@ def _hero_image_public_url(image_path):
     return f"https://raw.githubusercontent.com/{repo}/{branch}/{rel_path}?v={stamp}"
 
 
-def _build_hero_image_markup(image_url, mood, date_str):
+def _build_hero_image_markup(image_url, mood, date_str, todoist_struct=None):
+    struct = todoist_struct if isinstance(todoist_struct, dict) else {}
+    task_count = _safe_int(struct.get("displayed_count"), 0)
+    overdue_count = _safe_int(struct.get("overdue_count"), 0)
+    today_count = _safe_int(struct.get("today_count"), 0)
     mood_score = mood.get("level", 3)
     badge_style = (
         "display:inline-block; margin:0 0 8px 0; font-size:12px; color:#FFFFFF; "
@@ -836,6 +842,12 @@ def _build_hero_image_markup(image_url, mood, date_str):
         "background-color:#111827; border:1px solid #FFFFFF; "
         "border-radius:8px; padding:4px 8px; line-height:1.25;"
     )
+    task_badge_style = (
+        "display:inline-block; margin:0 0 8px 8px; font-size:12px; color:#FFFFFF; "
+        "background-color:#0F766E; border:1px solid #FFFFFF; "
+        "border-radius:8px; padding:4px 8px; line-height:1.25;"
+    )
+    task_badge_text = f"Görev: {task_count} · Gecikmiş: {overdue_count} · Bugün: {today_count}"
     title_style = (
         "margin:0; font-size:30px; line-height:1.25; font-weight:800; color:#FFFFFF; "
         "text-shadow:0 2px 8px rgba(0,0,0,0.55); mso-line-height-rule:exactly;"
@@ -858,7 +870,7 @@ def _build_hero_image_markup(image_url, mood, date_str):
         <tr>
           <td align="left" valign="bottom" style="padding:18px; font-size:14px; line-height:1.3;">
             <div style="{text_wrap_style}">
-              <p style="{badge_style}">📅 {date_str}</p><span style="{mood_badge_style}">Ruh Skoru: {mood_score}/5</span>
+              <p style="{badge_style}">📅 {date_str}</p><span style="{mood_badge_style}">Ruh Skoru: {mood_score}/5</span><span style="{task_badge_style}">{task_badge_text}</span>
               <p style="{title_style}">Günaydın, Fatih.</p>
               <p style="{subtitle_style}">📍 Doha, Katar · {mood['label']}</p>
             </div>
@@ -889,7 +901,7 @@ def _build_hero_image_markup(image_url, mood, date_str):
         <tr>
           <td align="left" valign="bottom" style="padding:18px; font-size:14px; line-height:1.3;">
             <div style="{text_wrap_style}">
-              <p style="{badge_style}">📅 {date_str}</p><span style="{mood_badge_style}">Ruh Skoru: {mood_score}/5</span>
+              <p style="{badge_style}">📅 {date_str}</p><span style="{mood_badge_style}">Ruh Skoru: {mood_score}/5</span><span style="{task_badge_style}">{task_badge_text}</span>
               <p style="{title_style}">Günaydın, Fatih.</p>
               <p style="{subtitle_style}">📍 Doha, Katar · {mood['label']}</p>
             </div>
@@ -906,44 +918,82 @@ def _build_hero_image_markup(image_url, mood, date_str):
 """.strip()
 
 
-def _generate_daily_header_image(client, raw_html, date_str, mood):
-    prompt = _build_header_image_prompt(mood, raw_html, date_str)
+def _existing_mood_header_variants(mood_level):
+    if not os.path.isdir(HEADER_IMAGE_DIR):
+        return {}
+    pattern = re.compile(rf"^mood-{mood_level}-(\d+)\.(png|jpg|webp)$", flags=re.IGNORECASE)
+    variants = {}
+    for filename in os.listdir(HEADER_IMAGE_DIR):
+        match = pattern.match(filename)
+        if not match:
+            continue
+        variant_index = _safe_int(match.group(1), -1)
+        if variant_index < 1:
+            continue
+        variants[variant_index] = os.path.join(HEADER_IMAGE_DIR, filename)
+    return variants
+
+
+def _header_model_candidates():
     requested = os.environ.get("GEMINI_IMAGE_MODEL")
     model_candidates = []
     if requested:
         model_candidates.append(requested)
     model_candidates.extend([GEMINI_IMAGE_MODEL, "gemini-3.1-flash-image-preview"])
     seen = set()
-    model_candidates = [m for m in model_candidates if not (m in seen or seen.add(m))]
+    return [m for m in model_candidates if not (m in seen or seen.add(m))]
 
-    for model_name in model_candidates:
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=[prompt],
-            )
-            image_bytes, mime = _extract_image_payload(response)
-            if not image_bytes:
-                continue
 
-            os.makedirs(HEADER_IMAGE_DIR, exist_ok=True)
-            ext = _image_extension_for_mime(mime)
-            image_path = os.path.join(HEADER_IMAGE_DIR, f"header-latest.{ext}")
+def _ensure_mood_header_pool(client, mood, raw_html, date_str):
+    mood_level = _safe_int(mood.get("level"), 3)
+    variants = _existing_mood_header_variants(mood_level)
+    if len(variants) >= HEADER_POOL_SIZE:
+        return variants, "pool-cache"
 
-            # Remove older format variants to keep the repo slim.
-            for stale_ext in ("png", "jpg", "webp"):
-                stale_path = os.path.join(HEADER_IMAGE_DIR, f"header-latest.{stale_ext}")
-                if stale_path != image_path and os.path.exists(stale_path):
-                    os.remove(stale_path)
+    os.makedirs(HEADER_IMAGE_DIR, exist_ok=True)
+    used_model = ""
+    for variant_index in range(1, HEADER_POOL_SIZE + 1):
+        if variant_index in variants:
+            continue
 
-            with open(image_path, "wb") as img_file:
-                img_file.write(image_bytes)
+        prompt = _build_header_image_prompt(mood, raw_html, date_str, variant_index)
+        generated = False
+        for model_name in _header_model_candidates():
+            try:
+                response = client.models.generate_content(model=model_name, contents=[prompt])
+                image_bytes, mime = _extract_image_payload(response)
+                if not image_bytes:
+                    continue
+                ext = _image_extension_for_mime(mime)
+                image_path = os.path.join(HEADER_IMAGE_DIR, f"mood-{mood_level}-{variant_index}.{ext}")
+                with open(image_path, "wb") as img_file:
+                    img_file.write(image_bytes)
+                variants[variant_index] = image_path
+                used_model = model_name
+                generated = True
+                print(f"🖼️ Mood header üretildi ({model_name}) -> {image_path}")
+                break
+            except Exception as err:
+                print(f"⚠️ Mood header üretimi başarısız ({model_name}, varyasyon {variant_index}): {err}")
+        if not generated:
+            print(f"⚠️ Mood={mood_level} varyasyon={variant_index} üretilemedi.")
+    return variants, used_model
 
-            print(f"🖼️ Üst görsel üretildi ({model_name}) -> {image_path}")
-            return _hero_image_public_url(image_path), model_name
-        except Exception as err:
-            print(f"⚠️ Üst görsel üretimi başarısız ({model_name}): {err}")
 
+def _select_mood_header_path(variants, now_qatar):
+    if not variants:
+        return ""
+    ordered = [variants[key] for key in sorted(variants.keys())]
+    day_key = now_qatar.toordinal()
+    selected_index = day_key % len(ordered)
+    return ordered[selected_index]
+
+
+def _generate_daily_header_image(client, raw_html, date_str, mood, now_qatar):
+    variants, model_used = _ensure_mood_header_pool(client, mood, raw_html, date_str)
+    selected_path = _select_mood_header_path(variants, now_qatar.date())
+    if selected_path:
+        return _hero_image_public_url(selected_path), model_used or "pool-cache"
     return "", ""
 
 def format_date_str(now):
@@ -1733,12 +1783,12 @@ def generate_daily_brief():
 
     mood = _score_brief_mood(raw_html)
     print(f"🧠 Özet ruh hali seviyesi: {mood['level']} ({mood['label']}) | skor={mood['score']}")
-    hero_image_url, image_model_used = _generate_daily_header_image(client, raw_html, date_str, mood)
+    hero_image_url, image_model_used = _generate_daily_header_image(client, raw_html, date_str, mood, now_qatar)
     if hero_image_url:
         print(f"🖼️ Üst görsel URL'si hazırlandı ({image_model_used})")
     else:
         print("⚠️ Üst görsel kullanılamadı, yedek hero bloğu kullanılıyor.")
-    hero_image_markup = _build_hero_image_markup(hero_image_url, mood, date_str)
+    hero_image_markup = _build_hero_image_markup(hero_image_url, mood, date_str, todoist_struct)
     
     # Template Birleştirme
     final_html = HTML_TEMPLATE.substitute(
