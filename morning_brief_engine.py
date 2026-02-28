@@ -860,6 +860,27 @@ def _normalize_mood_header_variants(mood_level, target_w, target_h):
     return variants
 
 
+def _all_mood_levels_in_headers():
+    if not os.path.isdir(HEADER_IMAGE_DIR):
+        return []
+    pattern = re.compile(r"^mood-(\d+)-\d+\.(png|jpg|webp)$", flags=re.IGNORECASE)
+    levels = set()
+    for filename in os.listdir(HEADER_IMAGE_DIR):
+        match = pattern.match(filename)
+        if not match:
+            continue
+        level = _safe_int(match.group(1), -1)
+        if level >= 1:
+            levels.add(level)
+    return sorted(levels)
+
+
+def _normalize_all_mood_headers():
+    target_w, target_h = _header_reference_dimensions()
+    for level in _all_mood_levels_in_headers():
+        _normalize_mood_header_variants(level, target_w, target_h)
+
+
 def _build_header_image_prompt(mood, raw_html, date_str, variant_index):
     themes = _extract_themes(raw_html, limit=5)
     theme_text = ", ".join(themes) if themes else "astroloji, finans, hava, odak"
@@ -873,7 +894,8 @@ Varyasyon kimliği: set-{variant_index}
 Kurallar:
 - Yatay oran: 680x220 (yaklaşık 3.09:1) düşün ve kompozisyonu bu orana göre kur.
 - Görsel soyut olsun; fotoğrafik yüz/insan olmasın.
-- Yazı, harf, logo, watermark, sembol, sayı, rakam, tipografi, ikon metni üretme.
+- Kesinlikle yazı, harf, logo, watermark, sembol, sayı, rakam, tipografi, ikon metni üretme.
+- Çizim içinde gizli/flu dahi metin ve sayı benzeri şekiller olmasın.
 - Renk seti: off-white, slate mist, sıcak turuncu vurgu, canlı yeşil, gökyüzü mavisi.
 - Kontrast yüksek ama göz yormayan, premium hissiyat.
 - Parlaklık ruh hali seviyesine göre ayarlansın.
@@ -1056,6 +1078,7 @@ def _select_mood_header_path(variants, now_qatar):
 
 
 def _generate_daily_header_image(client, raw_html, date_str, mood, now_qatar):
+    _normalize_all_mood_headers()
     variants, model_used = _ensure_mood_header_pool(client, mood, raw_html, date_str)
     selected_path = _select_mood_header_path(variants, now_qatar.date())
     if selected_path:
