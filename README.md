@@ -56,6 +56,8 @@ Copy `.env.example` to `.env` and set:
 - `GEMINI_MODEL=gemini-2.5-flash` (optional)
 - `GEMINI_IMAGE_MODEL=gemini-2.5-flash-image` (optional, hero image)
 - `HEADER_POOL_SIZE=5` (optional, mood başına üretilecek header varyasyon sayısı)
+- `HEADER_TARGET_WIDTH=1360` (optional, header normalize genişliği)
+- `HEADER_TARGET_HEIGHT=440` (optional, header normalize yüksekliği)
 - `TODOIST_API_TOKEN=...` (optional, Todoist tasks section)
 - `TODOIST_FILTER="overdue | today"` (optional)
 - `TODOIST_MAX_ITEMS=10` (optional)

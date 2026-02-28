@@ -13,6 +13,7 @@ import time
 from html.parser import HTMLParser
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from PIL import Image
 from google import genai
 from string import Template
 from kerykeion import AstrologicalSubjectFactory
@@ -85,6 +86,8 @@ USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, İstanbul"
 CACHE_DIR = ".cache"
 HEADER_IMAGE_DIR = os.path.join("assets", "headers")
 HEADER_POOL_SIZE = _env_int("HEADER_POOL_SIZE", 5, minimum=1, maximum=10)
+HEADER_TARGET_WIDTH = _env_int("HEADER_TARGET_WIDTH", 1360, minimum=680, maximum=3000)
+HEADER_TARGET_HEIGHT = _env_int("HEADER_TARGET_HEIGHT", 440, minimum=220, maximum=1500)
 FALLBACK_HERO_BG = "#374151"
 TODOIST_DEFAULT_FILTER = "overdue | today"
 TODOIST_API_TOKEN = _normalize_todoist_token(_env_str("TODOIST_API_TOKEN", ""))
@@ -797,6 +800,66 @@ def _image_extension_for_mime(mime):
     return "png"
 
 
+def _header_reference_dimensions():
+    reference = os.path.join(HEADER_IMAGE_DIR, "mood-5-5.png")
+    if os.path.exists(reference):
+        try:
+            with Image.open(reference) as img:
+                w, h = img.size
+            if w > 0 and h > 0:
+                return w, h
+        except Exception as err:
+            print(f"⚠️ Header referans ölçüsü okunamadı ({reference}): {err}")
+    return HEADER_TARGET_WIDTH, HEADER_TARGET_HEIGHT
+
+
+def _normalize_header_image(image_path, target_w, target_h):
+    try:
+        with Image.open(image_path) as src:
+            src_w, src_h = src.size
+            if src_w <= 0 or src_h <= 0:
+                return
+
+            target_ratio = target_w / float(target_h)
+            src_ratio = src_w / float(src_h)
+
+            if src_ratio > target_ratio:
+                crop_h = src_h
+                crop_w = int(round(crop_h * target_ratio))
+            else:
+                crop_w = src_w
+                crop_h = int(round(crop_w / target_ratio))
+
+            left = max(0, (src_w - crop_w) // 2)
+            top = max(0, (src_h - crop_h) // 2)
+            right = min(src_w, left + crop_w)
+            bottom = min(src_h, top + crop_h)
+
+            cropped = src.crop((left, top, right, bottom))
+            resized = cropped.resize((target_w, target_h), Image.Resampling.LANCZOS)
+
+            extension = os.path.splitext(image_path)[1].lower()
+            if extension in (".jpg", ".jpeg"):
+                resized = resized.convert("RGB")
+                resized.save(image_path, format="JPEG", quality=92, optimize=True)
+            elif extension == ".webp":
+                resized = resized.convert("RGB")
+                resized.save(image_path, format="WEBP", quality=92, method=6)
+            else:
+                if resized.mode not in ("RGB", "RGBA"):
+                    resized = resized.convert("RGBA")
+                resized.save(image_path, format="PNG", optimize=True)
+    except Exception as err:
+        print(f"⚠️ Header normalizasyonu başarısız ({image_path}): {err}")
+
+
+def _normalize_mood_header_variants(mood_level, target_w, target_h):
+    variants = _existing_mood_header_variants(mood_level)
+    for _, image_path in sorted(variants.items()):
+        _normalize_header_image(image_path, target_w, target_h)
+    return variants
+
+
 def _build_header_image_prompt(mood, raw_html, date_str, variant_index):
     themes = _extract_themes(raw_html, limit=5)
     theme_text = ", ".join(themes) if themes else "astroloji, finans, hava, odak"
@@ -946,7 +1009,8 @@ def _header_model_candidates():
 
 def _ensure_mood_header_pool(client, mood, raw_html, date_str):
     mood_level = _safe_int(mood.get("level"), 3)
-    variants = _existing_mood_header_variants(mood_level)
+    target_w, target_h = _header_reference_dimensions()
+    variants = _normalize_mood_header_variants(mood_level, target_w, target_h)
     if len(variants) >= HEADER_POOL_SIZE:
         return variants, "pool-cache"
 
@@ -968,6 +1032,7 @@ def _ensure_mood_header_pool(client, mood, raw_html, date_str):
                 image_path = os.path.join(HEADER_IMAGE_DIR, f"mood-{mood_level}-{variant_index}.{ext}")
                 with open(image_path, "wb") as img_file:
                     img_file.write(image_bytes)
+                _normalize_header_image(image_path, target_w, target_h)
                 variants[variant_index] = image_path
                 used_model = model_name
                 generated = True
@@ -977,6 +1042,7 @@ def _ensure_mood_header_pool(client, mood, raw_html, date_str):
                 print(f"⚠️ Mood header üretimi başarısız ({model_name}, varyasyon {variant_index}): {err}")
         if not generated:
             print(f"⚠️ Mood={mood_level} varyasyon={variant_index} üretilemedi.")
+    variants = _normalize_mood_header_variants(mood_level, target_w, target_h)
     return variants, used_model
 
 
