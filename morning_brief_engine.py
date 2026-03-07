@@ -1388,7 +1388,7 @@ def _parse_todoist_due(due_obj, qatar_tz, now_qatar):
             due_text = due_local.strftime("%d.%m %H:%M")
             due_sort = due_local.timestamp()
             is_overdue = due_local < now_qatar
-            has_time = due_local.date() == now_qatar.date()
+            has_time = True
             is_today = due_local.date() == now_qatar.date()
             return due_text, due_sort, is_overdue, has_time, is_today
         except Exception:
@@ -1439,43 +1439,50 @@ def get_todoist_data(now_qatar):
     print(f"ℹ️ Todoist[phase=init] entegrasyon aktif. Token: {token_preview}, filtre: '{TODOIST_FILTER}'")
 
     try:
-        filter_candidates = []
-        for item in [TODOIST_FILTER, TODOIST_DEFAULT_FILTER, "today"]:
-            candidate = (item or "").strip()
-            if candidate and candidate not in filter_candidates:
-                filter_candidates.append(candidate)
-
-        tasks = None
-        selected_filter = None
-        last_task_error = None
-        for candidate_filter in filter_candidates:
+        # Fetch overdue and today tasks with separate API calls so we can use
+        # Todoist's own filter classification instead of re-deriving it from the
+        # due date. This is necessary because Todoist rolls date-only tasks
+        # forward each day, making previously-overdue tasks appear with today's
+        # date — which would incorrectly classify them as "today" if we relied
+        # solely on date comparison.
+        def _fetch_filter(query, phase):
             try:
-                task_payload = _todoist_request(
-                    "/tasks/filter",
-                    params={"query": candidate_filter},
-                    phase="tasks_fetch",
-                )
-                tasks = _todoist_results(task_payload)
-                selected_filter = candidate_filter
-                break
+                payload = _todoist_request("/tasks/filter", params={"query": query}, phase=phase)
+                return _todoist_results(payload)
             except TodoistAPIError as err:
-                last_task_error = err
                 if err.status == 400:
-                    print(
-                        f"⚠️ Todoist[phase=tasks_fetch] filtre geçersiz ('{candidate_filter}'). "
-                        "Alternatif filtre deneniyor."
-                    )
-                    continue
+                    print(f"⚠️ Todoist[phase={phase}] filtre geçersiz ('{query}'), atlanıyor.")
+                    return None
                 raise
 
-        if tasks is None:
-            raise last_task_error or TodoistAPIError(
+        overdue_raw = _fetch_filter("overdue", "tasks_fetch_overdue")
+        today_raw = _fetch_filter("today", "tasks_fetch_today")
+
+        if overdue_raw is None and today_raw is None:
+            raise TodoistAPIError(
                 phase="tasks_fetch",
                 path="/tasks/filter",
-                details="Görev listesi alınamadı.",
+                details="Hem 'overdue' hem 'today' filtreleri başarısız oldu.",
             )
 
-        print(f"✅ Todoist[phase=tasks_fetch] {len(tasks)} görev alındı. Kullanılan filtre: '{selected_filter}'")
+        overdue_raw = overdue_raw or []
+        today_raw = today_raw or []
+
+        # Build a set of task IDs that Todoist itself considers overdue.
+        overdue_ids = {str(t.get("id")) for t in overdue_raw if isinstance(t, dict) and t.get("id")}
+
+        # Merge both lists, deduplicating by task ID (overdue takes priority).
+        tasks_by_id = {}
+        for t in today_raw:
+            if isinstance(t, dict) and t.get("id"):
+                tasks_by_id[str(t.get("id"))] = t
+        for t in overdue_raw:
+            if isinstance(t, dict) and t.get("id"):
+                tasks_by_id[str(t.get("id"))] = t
+        tasks = list(tasks_by_id.values())
+
+        print(f"✅ Todoist[phase=tasks_fetch] {len(tasks)} görev alındı "
+              f"(gecikmiş: {len(overdue_raw)}, bugün: {len(today_raw)}).")
 
         project_map = {}
         try:
@@ -1504,6 +1511,14 @@ def get_todoist_data(now_qatar):
                     content = content[:117] + "..."
 
                 due_text, due_sort, is_overdue, has_time, is_today = _parse_todoist_due(task.get("due"), qatar_tz, now_qatar)
+
+                # Trust Todoist's own "overdue" filter over local date arithmetic.
+                # Todoist rolls date-only tasks forward each day, so a task
+                # originally due yesterday may come back with today's date — yet
+                # Todoist still considers it overdue.
+                task_id = str(task.get("id") or "")
+                if task_id in overdue_ids:
+                    is_overdue = True
 
                 priority_num = _safe_int(task.get("priority"), 1)
                 project_id = str(task.get("project_id") or "")
