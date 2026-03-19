@@ -1246,9 +1246,107 @@ Saatlik detay:
         return "(Hava durumu verisi alınamadı.)", "partly-cloudy", datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
+_ETF_FALLBACK_WHITELIST = ["QQQI", "FDVV", "SCHD", "SCHG", "IAUI", "SLV"]
+_resolved_etf_tickers: list[str] = []  # populated by get_financial_data()
+
+def _get_portfolio_tickers_from_sheets():
+    """Read ETF tickers from Google Sheets where holdings > 0.
+
+    Requires env vars:
+      GSHEETS_SPREADSHEET_ID       - ID from the spreadsheet URL
+      GOOGLE_SERVICE_ACCOUNT_JSON  - base64-encoded service account JSON key
+    Optional:
+      GSHEETS_SHEET_NAME           - tab name (default: Portfolio)
+      GSHEETS_TICKER_COLUMN        - column header (default: Ticker)
+      GSHEETS_HOLDINGS_COLUMN      - column header (default: Holdings)
+
+    Returns a list of ticker strings, or None if the integration is not
+    configured or an error occurs (caller should fall back to hardcoded list).
+    """
+    spreadsheet_id = _env_str("GSHEETS_SPREADSHEET_ID", "")
+    sa_json_b64 = _env_str("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+
+    if not spreadsheet_id or not sa_json_b64:
+        return None  # Integration not configured
+
+    sheet_name     = _env_str("GSHEETS_SHEET_NAME", "Portfolio")
+    ticker_col     = _env_str("GSHEETS_TICKER_COLUMN", "Ticker")
+    holdings_col   = _env_str("GSHEETS_HOLDINGS_COLUMN", "Holdings")
+
+    try:
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+
+        sa_json_str = base64.b64decode(sa_json_b64).decode("utf-8")
+        sa_info = json.loads(sa_json_str)
+
+        creds = service_account.Credentials.from_service_account_info(
+            sa_info,
+            scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
+        )
+        service = build("sheets", "v4", credentials=creds, cache_discovery=False)
+        sheet = service.spreadsheets()
+
+        result = sheet.values().get(
+            spreadsheetId=spreadsheet_id,
+            range=sheet_name,
+        ).execute()
+
+        rows = result.get("values", [])
+        if not rows:
+            print("⚠️ Google Sheets: Tablo boş veya okunamadı.")
+            return None
+
+        # First row is the header
+        header = [str(h).strip() for h in rows[0]]
+        try:
+            ticker_idx   = header.index(ticker_col)
+            holdings_idx = header.index(holdings_col)
+        except ValueError as exc:
+            print(f"⚠️ Google Sheets: Sütun bulunamadı – {exc}. Başlıklar: {header}")
+            return None
+
+        tickers = []
+        for row in rows[1:]:
+            # Pad short rows
+            while len(row) <= max(ticker_idx, holdings_idx):
+                row.append("")
+            ticker   = str(row[ticker_idx]).strip().upper()
+            holdings_raw = str(row[holdings_idx]).strip().replace(",", ".")
+            if not ticker:
+                continue
+            try:
+                holdings = float(holdings_raw)
+            except ValueError:
+                holdings = 0.0
+            if holdings > 0:
+                tickers.append(ticker)
+
+        if tickers:
+            print(f"✅ Google Sheets'ten {len(tickers)} ETF okundu: {tickers}")
+        else:
+            print("⚠️ Google Sheets: Holdings > 0 olan ETF bulunamadı.")
+        return tickers if tickers else None
+
+    except Exception as e:
+        print(f"⚠️ Google Sheets hatası: {e}")
+        return None
+
+
 def get_financial_data():
-    """Fetch real market data for whitelisted tickers via Yahoo Finance."""
-    WHITELIST = ["QQQI", "FDVV", "SCHD", "SCHG", "IAUI", "SLV"]
+    """Fetch real market data for portfolio tickers via Yahoo Finance.
+
+    The ticker list is loaded dynamically from Google Sheets (holdings > 0).
+    Falls back to a hardcoded whitelist when Sheets integration is not
+    configured or unavailable.
+    """
+    global _resolved_etf_tickers
+    tickers = _get_portfolio_tickers_from_sheets()
+    if tickers is None:
+        tickers = _ETF_FALLBACK_WHITELIST
+        print(f"ℹ️ Sabit ETF listesi kullanılıyor: {tickers}")
+    _resolved_etf_tickers = tickers
+
     try:
         cached = _load_cache("finance.json", ttl_minutes=30)
         if cached:
@@ -1256,8 +1354,8 @@ def get_financial_data():
 
         lines = []
         latest_ts = None
-        data = yf.download(WHITELIST, period="5d", group_by="ticker", auto_adjust=False, progress=False)
-        for symbol in WHITELIST:
+        data = yf.download(tickers, period="5d", group_by="ticker", auto_adjust=False, progress=False)
+        for symbol in tickers:
             try:
                 if hasattr(data.columns, "levels"):
                     hist = data[symbol] if symbol in data.columns.levels[0] else None
@@ -1787,8 +1885,8 @@ def generate_daily_brief():
     {todoist_data}
 
     PORTFÖY:
-    - İzinli liste: QQQI, FDVV, SCHD, SCHG, IAUI, SLV
-    - Hariç tutulanlar: YMAG, TQQQ, GLDW
+    - Aktif pozisyonlar: {", ".join(_resolved_etf_tickers) if _resolved_etf_tickers else "Yukarıdaki piyasa verilerine bak"}
+    - Yalnızca bu ETF'leri analiz et; listede olmayan sembollere yer verme.
 
     ASTROLOJİ KAYNAKLARI:
     {ASTROLOGER_SOURCES}
