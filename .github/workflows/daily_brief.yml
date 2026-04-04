@@ -54,6 +54,11 @@ jobs:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          GSHEETS_SPREADSHEET_ID: ${{ secrets.GSHEETS_SPREADSHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GSHEETS_SHEET_NAME: ${{ vars.GSHEETS_SHEET_NAME }}
+          GSHEETS_TICKER_COLUMN: ${{ vars.GSHEETS_TICKER_COLUMN }}
+          GSHEETS_HOLDINGS_COLUMN: ${{ vars.GSHEETS_HOLDINGS_COLUMN }}
         run: python morning_brief_engine.py
 
       - name: Commit and Push changes

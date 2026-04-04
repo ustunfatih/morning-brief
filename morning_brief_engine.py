@@ -1246,7 +1246,7 @@ Saatlik detay:
         return "(Hava durumu verisi alınamadı.)", "partly-cloudy", datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
-_ETF_FALLBACK_WHITELIST = ["QQQI", "FDVV", "SCHD", "SCHG", "IAUI", "SLV"]
+_ETF_FALLBACK_WHITELIST = ["QQQI", "SCHD", "SCHG", "GLDW", "XBI", "VYMI", "AIS", "ARKX", "KSLV"]
 _resolved_etf_tickers: list[str] = []  # populated by get_financial_data()
 
 def _get_portfolio_tickers_from_sheets():
