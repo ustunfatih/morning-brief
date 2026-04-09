@@ -8,8 +8,8 @@ on:
       - index.html
       - assets/headers/**
   schedule:
-    # GitHub cron uses UTC. 04:00 UTC = 07:00 Asia/Qatar (UTC+3).
-    - cron: '0 4 * * *'
+    # GitHub cron uses UTC. 03:00 UTC = 06:00 Asia/Qatar (UTC+3).
+    - cron: '0 3 * * *'
   workflow_dispatch: # Manual trigger
 
 concurrency:
