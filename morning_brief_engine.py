@@ -42,6 +42,14 @@ def _env_str(name, default=""):
         return default
     return str(raw_value).strip()
 
+
+def _env_csv(name, default_values):
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return list(default_values)
+    values = [item.strip() for item in str(raw_value).split(",")]
+    return [item for item in values if item]
+
 def _strip_wrapping_quotes(value):
     if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
         return value[1:-1].strip()
@@ -77,6 +85,9 @@ class TodoistAPIError(RuntimeError):
 # --- CONFIGURATION ---
 API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
+GEMINI_FALLBACK_MODELS = _env_csv("GEMINI_FALLBACK_MODELS", ["gemini-2.5-flash-lite"])
+GEMINI_MAX_RETRIES = _env_int("GEMINI_MAX_RETRIES", 4, minimum=1, maximum=8)
+GEMINI_RETRY_BASE_SEC = max(0.5, float(os.environ.get("GEMINI_RETRY_BASE_SEC") or 1.5))
 EMAIL_RENDER_MODE = os.environ.get("EMAIL_RENDER_MODE") or "email-safe"
 THEME_PROFILE = os.environ.get("THEME_PROFILE") or "offwhite-slate"
 EMAIL_HTML_BUDGET_BYTES = _env_int("EMAIL_HTML_BUDGET_BYTES", 102400, minimum=16384, maximum=500000)
@@ -1090,6 +1101,48 @@ def format_date_str(now):
     days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
     return f"{now.day} {months[now.month]} {now.year}, {days[now.weekday()]}"
 
+
+def _text_model_candidates():
+    candidates = [GEMINI_MODEL] + GEMINI_FALLBACK_MODELS
+    seen = set()
+    return [model for model in candidates if model and not (model in seen or seen.add(model))]
+
+
+def _is_transient_gemini_error(err):
+    err_text = str(err).upper()
+    transient_markers = [
+        " 429 ",
+        "RESOURCE_EXHAUSTED",
+        "UNAVAILABLE",
+        "503",
+        "DEADLINE_EXCEEDED",
+        "TIMEOUT",
+        "INTERNAL",
+        "500",
+    ]
+    return any(marker in err_text for marker in transient_markers)
+
+
+def _generate_content_with_retry(client, prompt):
+    last_err = None
+    for model_name in _text_model_candidates():
+        for attempt in range(1, GEMINI_MAX_RETRIES + 1):
+            try:
+                if model_name != GEMINI_MODEL:
+                    print(f"ℹ️ Yedek model deneniyor: {model_name}")
+                return client.models.generate_content(model=model_name, contents=prompt)
+            except Exception as err:
+                last_err = err
+                if not _is_transient_gemini_error(err) or attempt >= GEMINI_MAX_RETRIES:
+                    break
+                wait_seconds = GEMINI_RETRY_BASE_SEC * (2 ** (attempt - 1))
+                print(
+                    f"⚠️ Gemini geçici hata ({model_name}, deneme {attempt}/{GEMINI_MAX_RETRIES}): {err}. "
+                    f"{wait_seconds:.1f}s sonra tekrar denenecek."
+                )
+                time.sleep(wait_seconds)
+    raise last_err if last_err else RuntimeError("Gemini yanıtı alınamadı.")
+
 def send_email(html_content, date_str):
     print("--- 📧 E-POSTA GÖNDERİM SÜRECİ BAŞLADI ---")
     
@@ -1956,7 +2009,7 @@ def generate_daily_brief():
     """
 
     try:
-        response = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
+        response = _generate_content_with_retry(client, prompt)
     except Exception as err:
         err_text = str(err)
         if "no longer available to new users" in err_text or ("NOT_FOUND" in err_text and "models/" in err_text):
