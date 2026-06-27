@@ -85,9 +85,9 @@ class TodoistAPIError(RuntimeError):
 # --- CONFIGURATION ---
 API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
-GEMINI_FALLBACK_MODELS = _env_csv("GEMINI_FALLBACK_MODELS", ["gemini-2.5-flash-lite"])
+GEMINI_FALLBACK_MODELS = _env_csv("GEMINI_FALLBACK_MODELS", ["gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"])
 GEMINI_MAX_RETRIES = _env_int("GEMINI_MAX_RETRIES", 4, minimum=1, maximum=8)
-GEMINI_RETRY_BASE_SEC = max(0.5, float(os.environ.get("GEMINI_RETRY_BASE_SEC") or 1.5))
+GEMINI_RETRY_BASE_SEC = max(0.5, float(os.environ.get("GEMINI_RETRY_BASE_SEC") or 3.0))
 EMAIL_RENDER_MODE = os.environ.get("EMAIL_RENDER_MODE") or "email-safe"
 THEME_PROFILE = os.environ.get("THEME_PROFILE") or "offwhite-slate"
 EMAIL_HTML_BUDGET_BYTES = _env_int("EMAIL_HTML_BUDGET_BYTES", 102400, minimum=16384, maximum=500000)
@@ -1866,6 +1866,74 @@ AY BİLGİSİ:
         return "\n(Efemeris verisi hesaplanamadı, genel astroloji bilgisi kullan.)\n"
 
 
+def _build_fallback_html(date_str, weather_data, todoist_struct, financial_data,
+                         todoist_time_display, finance_time_display, market_status, error):
+    """Minimal HTML when Gemini is completely unavailable — raw data only, no AI narrative."""
+    error_snippet = html.escape(str(error)[:200])
+
+    weather_lines = []
+    for line in weather_data.splitlines():
+        stripped = line.strip()
+        if stripped:
+            weather_lines.append(
+                f'<p style="margin:0 0 5px 0; font-size:13px; color:#1F2933;">{html.escape(stripped)}</p>'
+            )
+
+    finance_items = []
+    for line in financial_data.splitlines():
+        stripped = line.strip()
+        if stripped:
+            finance_items.append(
+                f'<li style="padding:6px 0; font-size:13px; color:#1F2933; border-bottom:1px solid #E5E7EB;">'
+                f'{html.escape(stripped)}</li>'
+            )
+
+    todoist_section = _build_todoist_section_html(todoist_struct, todoist_time_display)
+
+    raw = f"""
+<div class="section-wrapper" id="odak">
+  <div class="card">
+    <div class="card-header" style="margin-bottom:8px;">
+      <span class="tag tag-red">UYARI</span>
+      <span class="card-title" style="margin-left:8px;">Yapay Zeka Servisi Geçici Olarak Kullanılamıyor</span>
+    </div>
+    <p style="font-size:13px; color:#4B5563; margin:0 0 6px 0;">Gemini API yüksek talep nedeniyle yanıt veremedi. Aşağıda ham veriler sunulmaktadır.</p>
+    <p style="font-size:12px; color:#6B7280; margin:0;">Hata: {error_snippet}</p>
+  </div>
+</div>
+<div class="section-wrapper" id="hava">
+  <div class="card">
+    <div class="card-header" style="margin-bottom:8px;">
+      <span class="tag tag-blue">HAVA</span>
+      <span class="card-title" style="margin-left:8px;">Doha Hava Durumu</span>
+    </div>
+    {"".join(weather_lines[:14])}
+  </div>
+</div>
+<div class="section-wrapper" id="astro">
+  <div class="card"><p style="font-size:13px; color:#4B5563; margin:0;">Astroloji bölümü bu çalıştırmada üretilemedi.</p></div>
+</div>
+<div class="section-wrapper" id="karar">
+  <div class="card"><p style="font-size:13px; color:#4B5563; margin:0;">Karar bölümü bu çalıştırmada üretilemedi.</p></div>
+</div>
+<div class="section-wrapper" id="is">
+  <div class="card"><p style="font-size:13px; color:#4B5563; margin:0;">İş bölümü bu çalıştırmada üretilemedi.</p></div>
+</div>
+{todoist_section}
+<div class="section-wrapper" id="finans">
+  <div class="card">
+    <div class="card-header" style="margin-bottom:8px;">
+      <span class="tag tag-gold">FİNANS</span>
+      <span class="card-title" style="margin-left:8px;">Piyasa Verileri</span>
+    </div>
+    <p style="margin:0 0 8px 0; font-size:12px; color:#4B5563;">Veri zamanı: {html.escape(finance_time_display)} (US/Eastern) — {html.escape(market_status)}</p>
+    <ul style="list-style:none; padding:0; margin:0;">{"".join(finance_items)}</ul>
+  </div>
+</div>
+""".strip()
+    return _escape_template_like_sequences(raw)
+
+
 def generate_daily_brief():
     if not API_KEY:
         print("Hata: GEMINI_API_KEY (veya GOOGLE_API_KEY) bulunamadı.")
@@ -2012,21 +2080,41 @@ def generate_daily_brief():
         response = _generate_content_with_retry(client, prompt)
     except Exception as err:
         err_text = str(err)
+        print(f"❌ Gemini tüm modeller ve denemeler tükendi: {err_text[:300]}")
         if "no longer available to new users" in err_text or ("NOT_FOUND" in err_text and "models/" in err_text):
             print(f"\nGemini modeli '{GEMINI_MODEL}' bu anahtar/proje için kullanılamıyor.")
-            print("Çözüm:")
-            print("1) GEMINI_MODEL değişkenini kullanılabilir güncel bir modelle ayarla (örnek: gemini-2.5-flash).")
-            print("2) Ortam değişkeni/secret güncelledikten sonra workflow'u tekrar çalıştır.")
+            print("Çözüm: GEMINI_MODEL değişkenini geçerli bir modelle güncelle ve workflow'u tekrar çalıştır.")
         if (
             "PERMISSION_DENIED" in err_text
             and "generativelanguage.googleapis.com" in err_text
         ) or "SERVICE_DISABLED" in err_text:
             print("\nGemini isteği başarısız: API anahtarının bağlı olduğu projede Generative Language API etkin değil.")
-            print("Çözüm:")
-            print("1) API anahtarının bulunduğu aynı projede Generative Language API'yi etkinleştir.")
-            print("2) GitHub Actions içindeki GEMINI_API_KEY secret değerini yeni anahtarla güncelle.")
-            print("3) Yayılım için 2-10 dakika bekleyip workflow'u tekrar çalıştır.")
-        raise
+            print("Çözüm: İlgili projede API'yi etkinleştir, GEMINI_API_KEY secret'ını güncelle ve tekrar çalıştır.")
+        print("⚠️ Gemini yanıtsız. Ham veri içeren yedek e-posta gönderiliyor...")
+        raw_html = _build_fallback_html(
+            date_str, weather_data, todoist_struct, financial_data,
+            todoist_time_display, finance_time_display, market_status, err,
+        )
+        mood = MOOD_PROFILES[3].copy()
+        mood["level"] = 3
+        mood["score"] = 0
+        hero_image_url, image_model_used = _generate_daily_header_image(client, raw_html, date_str, mood, now_qatar)
+        hero_image_markup = _build_hero_image_markup(hero_image_url, mood, date_str, todoist_struct)
+        final_html = HTML_TEMPLATE.substitute(
+            date_string=date_str,
+            content_body=raw_html,
+            hero_image_markup=hero_image_markup,
+            gen_time=gen_time_str,
+            weather_time=weather_time_display,
+            todoist_time=todoist_time_display,
+            finance_time=finance_time_display,
+            market_status=market_status,
+        )
+        _log_payload_size(final_html)
+        with open("index.html", "w", encoding="utf-8") as f:
+            f.write(final_html)
+        send_email(final_html, f"[Yedek] {date_str}")
+        return
     
     # Temizlik
     raw_html = response.text.replace("```html", "").replace("```", "").strip()
