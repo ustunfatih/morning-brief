@@ -1430,32 +1430,99 @@ Saatlik detay:
         return "(Hava durumu verisi alınamadı.)", "partly-cloudy", datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
-_ETF_FALLBACK_WHITELIST = ["QQQI", "SCHD", "SCHG", "GLDW", "XBI", "VYMI", "AIS", "ARKX", "KSLV"]
+_ETF_FALLBACK_WHITELIST = ["SCHD", "QQQI", "AIS", "SCHG", "ROKT", "ARKX"]
 _resolved_etf_tickers: list[str] = []  # populated by get_financial_data()
+_portfolio_display_tickers: dict[str, str] = {}
+
+
+def _parse_decimal_number(value, default=0.0):
+    if value is None:
+        return default
+    text = str(value).strip()
+    if not text:
+        return default
+    text = re.sub(r"[^0-9,.\-]", "", text)
+    if not text or text in {"-", ".", ","}:
+        return default
+    if "," in text and "." in text:
+        if text.rfind(",") > text.rfind("."):
+            text = text.replace(".", "").replace(",", ".")
+        else:
+            text = text.replace(",", "")
+    elif "," in text:
+        text = text.replace(",", ".")
+    try:
+        return float(text)
+    except ValueError:
+        return default
+
+
+def _normalize_market_ticker(raw_ticker):
+    ticker = str(raw_ticker or "").strip().upper()
+    if not ticker or ticker == "TOTAL":
+        return "", ""
+    display = ticker
+    if ":" in ticker:
+        ticker = ticker.split(":", 1)[1].strip()
+    ticker = ticker.replace(" ", "")
+    if not re.fullmatch(r"[A-Z0-9.\-]{1,12}", ticker):
+        return "", ""
+    return ticker, display
+
+
+def _extract_portfolio_tickers_from_rows(rows, header_row_num, ticker_col, holdings_col):
+    header_index = header_row_num - 1
+    if len(rows) <= header_index:
+        raise ValueError(f"Header row {header_row_num} okunamadı.")
+
+    header = [str(h).strip() for h in rows[header_index]]
+    ticker_idx = header.index(ticker_col)
+    holdings_idx = header.index(holdings_col)
+
+    tickers = []
+    display_map = {}
+    for raw_row in rows[header_index + 1:]:
+        row = list(raw_row)
+        while len(row) <= max(ticker_idx, holdings_idx):
+            row.append("")
+        ticker, display_ticker = _normalize_market_ticker(row[ticker_idx])
+        if not ticker:
+            continue
+        holdings = _parse_decimal_number(row[holdings_idx])
+        if holdings > 0:
+            tickers.append(ticker)
+            display_map[ticker] = display_ticker
+    return tickers, display_map
+
 
 def _get_portfolio_tickers_from_sheets():
-    """Read ETF tickers from Google Sheets where holdings > 0.
+    """Read current ETF/stock tickers from Google Sheets where holdings > 0.
 
     Requires env vars:
       GSHEETS_SPREADSHEET_ID       - ID from the spreadsheet URL
       GOOGLE_SERVICE_ACCOUNT_JSON  - base64-encoded service account JSON key
     Optional:
-      GSHEETS_SHEET_NAME           - tab name (default: Portfolio)
+      GSHEETS_SHEET_NAME           - tab name (default: Dashboard v2)
+      GSHEETS_HEADER_ROW           - 1-based row containing headers (default: 6)
       GSHEETS_TICKER_COLUMN        - column header (default: Ticker)
-      GSHEETS_HOLDINGS_COLUMN      - column header (default: Holdings)
+      GSHEETS_HOLDINGS_COLUMN      - column header (default: Shares)
+      GSHEETS_READ_RANGE           - bounded range to read (default: sheet data range)
 
     Returns a list of ticker strings, or None if the integration is not
     configured or an error occurs (caller should fall back to hardcoded list).
     """
+    global _portfolio_display_tickers
     spreadsheet_id = _env_str("GSHEETS_SPREADSHEET_ID", "")
     sa_json_b64 = _env_str("GOOGLE_SERVICE_ACCOUNT_JSON", "")
 
     if not spreadsheet_id or not sa_json_b64:
         return None  # Integration not configured
 
-    sheet_name     = _env_str("GSHEETS_SHEET_NAME", "Portfolio")
-    ticker_col     = _env_str("GSHEETS_TICKER_COLUMN", "Ticker")
-    holdings_col   = _env_str("GSHEETS_HOLDINGS_COLUMN", "Holdings")
+    sheet_name = _env_str("GSHEETS_SHEET_NAME", "Dashboard v2")
+    header_row_num = _env_int("GSHEETS_HEADER_ROW", 6, minimum=1, maximum=100)
+    ticker_col = _env_str("GSHEETS_TICKER_COLUMN", "Ticker")
+    holdings_col = _env_str("GSHEETS_HOLDINGS_COLUMN", "Shares")
+    read_range = _env_str("GSHEETS_READ_RANGE", sheet_name)
 
     try:
         from google.oauth2 import service_account
@@ -1473,7 +1540,7 @@ def _get_portfolio_tickers_from_sheets():
 
         result = sheet.values().get(
             spreadsheetId=spreadsheet_id,
-            range=sheet_name,
+            range=read_range,
         ).execute()
 
         rows = result.get("values", [])
@@ -1481,35 +1548,20 @@ def _get_portfolio_tickers_from_sheets():
             print("⚠️ Google Sheets: Tablo boş veya okunamadı.")
             return None
 
-        # First row is the header
-        header = [str(h).strip() for h in rows[0]]
         try:
-            ticker_idx   = header.index(ticker_col)
-            holdings_idx = header.index(holdings_col)
+            tickers, display_map = _extract_portfolio_tickers_from_rows(
+                rows, header_row_num, ticker_col, holdings_col
+            )
         except ValueError as exc:
+            header = rows[header_row_num - 1] if len(rows) >= header_row_num else []
             print(f"⚠️ Google Sheets: Sütun bulunamadı – {exc}. Başlıklar: {header}")
             return None
 
-        tickers = []
-        for row in rows[1:]:
-            # Pad short rows
-            while len(row) <= max(ticker_idx, holdings_idx):
-                row.append("")
-            ticker   = str(row[ticker_idx]).strip().upper()
-            holdings_raw = str(row[holdings_idx]).strip().replace(",", ".")
-            if not ticker:
-                continue
-            try:
-                holdings = float(holdings_raw)
-            except ValueError:
-                holdings = 0.0
-            if holdings > 0:
-                tickers.append(ticker)
-
         if tickers:
-            print(f"✅ Google Sheets'ten {len(tickers)} ETF okundu: {tickers}")
+            _portfolio_display_tickers = display_map
+            print(f"✅ Google Sheets'ten {len(tickers)} aktif pozisyon okundu: {tickers}")
         else:
-            print("⚠️ Google Sheets: Holdings > 0 olan ETF bulunamadı.")
+            print("⚠️ Google Sheets: Shares/Holdings > 0 olan aktif pozisyon bulunamadı.")
         return tickers if tickers else None
 
     except Exception as e:
@@ -1524,10 +1576,11 @@ def get_financial_data():
     Falls back to a hardcoded whitelist when Sheets integration is not
     configured or unavailable.
     """
-    global _resolved_etf_tickers
+    global _resolved_etf_tickers, _portfolio_display_tickers
     tickers = _get_portfolio_tickers_from_sheets()
     if tickers is None:
         tickers = _ETF_FALLBACK_WHITELIST
+        _portfolio_display_tickers = {ticker: ticker for ticker in tickers}
         print(f"ℹ️ Sabit ETF listesi kullanılıyor: {tickers}")
     _resolved_etf_tickers = tickers
 
@@ -1535,7 +1588,10 @@ def get_financial_data():
         yf = _get_yfinance()
         cached = _load_cache("finance.json", ttl_minutes=30)
         if cached:
-            return cached["data"]["text"], cached["data"]["fetched_at"], cached["data"]["latest_ts"]
+            cached_data = cached.get("data", {})
+            if cached_data.get("tickers") == tickers:
+                return cached_data["text"], cached_data["fetched_at"], cached_data["latest_ts"]
+            print("ℹ️ Finans önbelleği aktif pozisyon listesi değiştiği için yenileniyor.")
 
         lines = []
         latest_ts = None
@@ -1570,8 +1626,9 @@ def get_financial_data():
                     week_str = ""
 
                 direction = "yukarı" if change_pct >= 0 else "aşağı"
+                display_symbol = _portfolio_display_tickers.get(symbol, symbol)
                 lines.append(
-                f"  {symbol}: ${current:.2f} ({change_pct:+.2f}% {direction}){week_str} | Hacim: {hist['Volume'].iloc[-1]:,.0f}"
+                    f"  {display_symbol}: ${current:.2f} ({change_pct:+.2f}% {direction}){week_str} | Hacim: {hist['Volume'].iloc[-1]:,.0f}"
                 )
             except Exception as e:
                 lines.append(f"  {symbol}: Hata - {str(e)[:50]}")
@@ -1579,7 +1636,7 @@ def get_financial_data():
         fetched_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
         latest_ts_str = latest_ts.isoformat() if latest_ts is not None else fetched_at
         text = "GERÇEK PİYASA VERİLERİ (Yahoo Finance):\n" + "\n".join(lines)
-        _save_cache("finance.json", {"text": text, "fetched_at": fetched_at, "latest_ts": latest_ts_str})
+        _save_cache("finance.json", {"text": text, "fetched_at": fetched_at, "latest_ts": latest_ts_str, "tickers": tickers})
         return text, fetched_at, latest_ts_str
     except Exception as e:
         print(f"⚠️ Finansal veri hatası: {e}")

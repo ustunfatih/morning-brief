@@ -49,6 +49,20 @@ To include daily Todoist tasks in the brief:
   - `TODOIST_MAX_ITEMS` (example: `10`)
   - `TODOIST_CACHE_TTL_MIN` (example: `10`)
 
+### 3.3) (Optional) Google Sheets current holdings integration
+
+To keep `Piyasa Özeti` limited to actual current holdings:
+- Add repository secret: `GSHEETS_SPREADSHEET_ID`
+- Add repository secret: `GOOGLE_SERVICE_ACCOUNT_JSON`
+  - Base64-encoded service account JSON.
+  - Share the spreadsheet with the service account email.
+- Add repository variables if your sheet layout differs:
+  - `GSHEETS_SHEET_NAME` (default: `Dashboard v2`)
+  - `GSHEETS_HEADER_ROW` (default: `6`)
+  - `GSHEETS_TICKER_COLUMN` (default: `Ticker`)
+  - `GSHEETS_HOLDINGS_COLUMN` (default: `Shares`)
+  - `GSHEETS_READ_RANGE` (default: `Dashboard v2`)
+
 ### 4) Local development (optional)
 
 Copy `.env.example` to `.env` and set:
