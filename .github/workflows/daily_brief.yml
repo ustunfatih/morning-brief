@@ -51,6 +51,15 @@ jobs:
           TODOIST_FILTER: ${{ vars.TODOIST_FILTER }}
           TODOIST_MAX_ITEMS: ${{ vars.TODOIST_MAX_ITEMS }}
           TODOIST_CACHE_TTL_MIN: ${{ vars.TODOIST_CACHE_TTL_MIN }}
+          USER_BIRTH_DATA: ${{ secrets.USER_BIRTH_DATA }}
+          NATAL_YEAR: ${{ secrets.NATAL_YEAR }}
+          NATAL_MONTH: ${{ secrets.NATAL_MONTH }}
+          NATAL_DAY: ${{ secrets.NATAL_DAY }}
+          NATAL_HOUR: ${{ secrets.NATAL_HOUR }}
+          NATAL_MINUTE: ${{ secrets.NATAL_MINUTE }}
+          NATAL_LAT: ${{ secrets.NATAL_LAT }}
+          NATAL_LNG: ${{ secrets.NATAL_LNG }}
+          NATAL_TZ: ${{ secrets.NATAL_TZ }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}

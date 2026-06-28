@@ -62,6 +62,7 @@ Copy `.env.example` to `.env` and set:
 - `TODOIST_FILTER="overdue | today"` (optional)
 - `TODOIST_MAX_ITEMS=10` (optional)
 - `TODOIST_CACHE_TTL_MIN=10` (optional)
+- `USER_BIRTH_DATA` and `NATAL_*` values (optional private natal profile overrides)
 - `EMAIL_RENDER_MODE=email-safe` (optional)
 - `THEME_PROFILE=offwhite-slate` (optional)
 - `EMAIL_HTML_BUDGET_BYTES=102400` (optional warning threshold)

@@ -13,11 +13,7 @@ import time
 from html.parser import HTMLParser
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from PIL import Image
-from google import genai
 from string import Template
-from kerykeion import AstrologicalSubjectFactory
-import yfinance as yf
 
 def _env_int(name, default, minimum=None, maximum=None):
     raw_value = os.environ.get(name)
@@ -74,6 +70,29 @@ def _safe_int(value, default):
         return default
 
 
+def _env_float(name, default):
+    raw_value = os.environ.get(name)
+    if raw_value is None or str(raw_value).strip() == "":
+        return default
+    try:
+        return float(str(raw_value).strip())
+    except ValueError:
+        print(f"⚠️ {name} geçersiz ('{raw_value}'). Varsayılan değer ({default}) kullanılacak.")
+        return default
+
+
+def _mask_for_log(value):
+    if not value:
+        return "(boş)"
+    text = str(value)
+    if "@" in text:
+        local, _, domain = text.partition("@")
+        return f"{local[:1]}***@{domain}"
+    if len(text) <= 4:
+        return "***"
+    return f"{text[:2]}***{text[-2:]}"
+
+
 class TodoistAPIError(RuntimeError):
     def __init__(self, phase, path, status=None, details=""):
         self.phase = phase
@@ -93,7 +112,7 @@ THEME_PROFILE = os.environ.get("THEME_PROFILE") or "offwhite-slate"
 EMAIL_HTML_BUDGET_BYTES = _env_int("EMAIL_HTML_BUDGET_BYTES", 102400, minimum=16384, maximum=500000)
 GEMINI_IMAGE_MODEL = os.environ.get("GEMINI_IMAGE_MODEL") or "gemini-2.5-flash-image"
 TIMEZONE = "Asia/Qatar"
-USER_BIRTH_DATA = "14 Haziran 1989, 09:45 AM, Fatih, İstanbul"
+USER_BIRTH_DATA = _env_str("USER_BIRTH_DATA", "kişisel profil yapılandırıldı")
 CACHE_DIR = ".cache"
 HEADER_IMAGE_DIR = os.path.join("assets", "headers")
 HEADER_POOL_SIZE = _env_int("HEADER_POOL_SIZE", 5, minimum=1, maximum=10)
@@ -107,11 +126,16 @@ TODOIST_MAX_ITEMS = max(10, _env_int("TODOIST_MAX_ITEMS", 10, minimum=1, maximum
 TODOIST_CACHE_TTL_MIN = _env_int("TODOIST_CACHE_TTL_MIN", 10, minimum=1, maximum=180)
 TODOIST_API_BASE = "https://api.todoist.com/api/v1"
 
-# Fatih's natal chart coordinates (Istanbul, Fatih district)
-NATAL_YEAR, NATAL_MONTH, NATAL_DAY = 1989, 6, 14
-NATAL_HOUR, NATAL_MINUTE = 9, 45
-NATAL_LAT, NATAL_LNG = 41.0082, 28.9784  # Istanbul
-NATAL_TZ = "Europe/Istanbul"
+# Fatih's natal chart coordinates. Override through secrets/variables when
+# running outside the private local environment.
+NATAL_YEAR = _env_int("NATAL_YEAR", 1989)
+NATAL_MONTH = _env_int("NATAL_MONTH", 6, minimum=1, maximum=12)
+NATAL_DAY = _env_int("NATAL_DAY", 14, minimum=1, maximum=31)
+NATAL_HOUR = _env_int("NATAL_HOUR", 9, minimum=0, maximum=23)
+NATAL_MINUTE = _env_int("NATAL_MINUTE", 45, minimum=0, maximum=59)
+NATAL_LAT = _env_float("NATAL_LAT", 41.0082)
+NATAL_LNG = _env_float("NATAL_LNG", 28.9784)
+NATAL_TZ = _env_str("NATAL_TZ", "Europe/Istanbul")
 
 # Doha coordinates (current location)
 DOHA_LAT, DOHA_LNG = 25.2854, 51.5310
@@ -440,8 +464,11 @@ class _HTMLSanitizer(HTMLParser):
             return
         safe_attrs = {}
         for k, v in attrs:
-            if k in self.allowed_attrs.get(tag, set()):
-                safe_attrs[k] = v
+            if k not in self.allowed_attrs.get(tag, set()):
+                continue
+            cleaned_value = _sanitize_attr_value(tag, k, v)
+            if cleaned_value is not None:
+                safe_attrs[k] = cleaned_value
 
         class_name = safe_attrs.get("class", "")
         class_style = _style_for_classes(class_name)
@@ -449,7 +476,9 @@ class _HTMLSanitizer(HTMLParser):
             existing = safe_attrs.get("style", "")
             safe_attrs["style"] = _merge_styles(existing, class_style)
 
-        attr_str = "".join([f' {k}="{v}"' for k, v in safe_attrs.items()])
+        attr_str = "".join(
+            [f' {k}="{html.escape(str(v), quote=True)}"' for k, v in safe_attrs.items()]
+        )
         self.parts.append(f"<{tag}{attr_str}>")
 
     def handle_endtag(self, tag):
@@ -495,6 +524,74 @@ EMAIL_CLASS_STYLES = {
     "finance-list": "list-style:none;padding:0;margin:0;",
     "source-link": "color:#2B7CAB;text-decoration:underline;",
 }
+
+
+def _sanitize_attr_value(tag, attr_name, value):
+    if value is None:
+        return ""
+
+    attr_name = attr_name.lower()
+    value = str(value).strip()
+
+    if attr_name in {"href", "src"}:
+        return _sanitize_url_attr(tag, attr_name, value)
+    if attr_name == "target":
+        return "_blank" if value == "_blank" else None
+    if attr_name in {"width", "height", "border", "cellpadding", "cellspacing", "colspan", "rowspan"}:
+        return value if re.fullmatch(r"\d{1,4}", value) else None
+    if attr_name == "role":
+        return value if re.fullmatch(r"[A-Za-z0-9_-]{1,32}", value) else None
+    if attr_name in {"align", "valign"}:
+        return value if value.lower() in {"left", "center", "right", "top", "middle", "bottom"} else None
+    if attr_name == "id":
+        return value if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", value) else None
+    if attr_name == "class":
+        classes = [cls for cls in value.split() if re.fullmatch(r"[A-Za-z0-9_-]{1,64}", cls)]
+        return " ".join(classes)
+    if attr_name == "style":
+        return _sanitize_inline_style(value)
+    if attr_name == "alt":
+        return value[:160]
+    return value
+
+
+def _sanitize_url_attr(tag, attr_name, value):
+    if not value:
+        return None
+    lowered = value.lower()
+    if any(ch in value for ch in ("\x00", "\n", "\r", "\t")):
+        return None
+    if attr_name == "href" and lowered.startswith("#"):
+        return value
+    parsed = urllib.parse.urlsplit(value)
+    scheme = parsed.scheme.lower()
+    if attr_name == "href" and scheme in {"http", "https", "mailto"}:
+        return value
+    if attr_name == "src" and tag == "img" and scheme in {"http", "https"}:
+        return value
+    return None
+
+
+def _sanitize_inline_style(style_value):
+    if not style_value:
+        return ""
+    dangerous = re.compile(
+        r"(?i)(expression\s*\(|javascript\s*:|data\s*:|url\s*\(|@import|behavior\s*:|binding\s*:)"
+    )
+    safe_declarations = []
+    for declaration in style_value.split(";"):
+        declaration = declaration.strip()
+        if not declaration or ":" not in declaration:
+            continue
+        prop, raw_val = declaration.split(":", 1)
+        prop = prop.strip().lower()
+        raw_val = raw_val.strip()
+        if not re.fullmatch(r"[a-z-]{1,40}", prop):
+            continue
+        if dangerous.search(raw_val):
+            continue
+        safe_declarations.append(f"{prop}:{raw_val}")
+    return ";".join(safe_declarations) + (";" if safe_declarations else "")
 
 
 def _merge_styles(existing_style, extra_style):
@@ -812,6 +909,7 @@ def _image_extension_for_mime(mime):
 
 
 def _header_reference_dimensions():
+    Image = _get_pil_image()
     reference = os.path.join(HEADER_IMAGE_DIR, "mood-5-5.png")
     if os.path.exists(reference):
         try:
@@ -826,6 +924,7 @@ def _header_reference_dimensions():
 
 def _normalize_header_image(image_path, target_w, target_h):
     try:
+        Image = _get_pil_image()
         with Image.open(image_path) as src:
             src_w, src_h = src.size
             if src_w <= 0 or src_h <= 0:
@@ -1108,6 +1207,38 @@ def _text_model_candidates():
     return [model for model in candidates if model and not (model in seen or seen.add(model))]
 
 
+def _get_pil_image():
+    try:
+        from PIL import Image
+    except ImportError as err:
+        raise RuntimeError("Pillow paketi kurulu değil. `pip install -r requirements.txt` çalıştırılmalı.") from err
+    return Image
+
+
+def _get_astrological_subject_factory():
+    try:
+        from kerykeion import AstrologicalSubjectFactory
+    except ImportError as err:
+        raise RuntimeError("kerykeion paketi kurulu değil. `pip install -r requirements.txt` çalıştırılmalı.") from err
+    return AstrologicalSubjectFactory
+
+
+def _get_yfinance():
+    try:
+        import yfinance as yf
+    except ImportError as err:
+        raise RuntimeError("yfinance paketi kurulu değil. `pip install -r requirements.txt` çalıştırılmalı.") from err
+    return yf
+
+
+def _create_genai_client(api_key):
+    try:
+        from google import genai
+    except ImportError as err:
+        raise RuntimeError("google-genai paketi kurulu değil. `pip install -r requirements.txt` çalıştırılmalı.") from err
+    return genai.Client(api_key=api_key)
+
+
 def _is_transient_gemini_error(err):
     err_text = str(err).upper()
     transient_markers = [
@@ -1157,7 +1288,7 @@ def send_email(html_content, date_str):
         print("❌ HATA: 'EMAIL_TO' secret tanımlı değil!")
         return
 
-    print(f"✅ Kimlik bilgileri bulundu. Gönderen: {EMAIL_USER} -> Alıcı: {EMAIL_TO}")
+    print(f"✅ Kimlik bilgileri bulundu. Gönderen: {_mask_for_log(EMAIL_USER)} -> Alıcı: {_mask_for_log(EMAIL_TO)}")
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"Sabah Özeti: {date_str}"
@@ -1401,6 +1532,7 @@ def get_financial_data():
     _resolved_etf_tickers = tickers
 
     try:
+        yf = _get_yfinance()
         cached = _load_cache("finance.json", ttl_minutes=30)
         if cached:
             return cached["data"]["text"], cached["data"]["fetched_at"], cached["data"]["latest_ts"]
@@ -1586,8 +1718,7 @@ def get_todoist_data(now_qatar):
     stale_cache = _load_cache_any("todoist.json")
     priority_map = {4: "P1", 3: "P2", 2: "P3", 1: "P4"}
     qatar_tz = pytz.timezone(TIMEZONE)
-    token_preview = f"{TODOIST_API_TOKEN[:4]}...{TODOIST_API_TOKEN[-3:]}" if len(TODOIST_API_TOKEN) >= 8 else "kısa-token"
-    print(f"ℹ️ Todoist[phase=init] entegrasyon aktif. Token: {token_preview}, filtre: '{TODOIST_FILTER}'")
+    print(f"ℹ️ Todoist[phase=init] entegrasyon aktif. Token: {_mask_for_log(TODOIST_API_TOKEN)}, filtre: '{TODOIST_FILTER}'")
 
     try:
         # Fetch overdue and today tasks with separate API calls so we can use
@@ -1776,6 +1907,7 @@ def get_todoist_data(now_qatar):
 def get_planetary_data(now_qatar):
     """Compute real planetary positions using Swiss Ephemeris via kerykeion."""
     try:
+        AstrologicalSubjectFactory = _get_astrological_subject_factory()
         # Current sky (transit chart) from Doha
         transit = AstrologicalSubjectFactory.from_birth_data(
             name="Güncel Gökyüzü",
@@ -1853,7 +1985,7 @@ GERÇEK GEZEGENSEL VERİLER (Swiss Ephemeris - bugünkü hesaplama):
 GÜNCEL TRANSİT POZİSYONLARI (Doha, {now_qatar.strftime('%d.%m.%Y %H:%M')}):
 {transit_text}
 
-FATİH'İN NATAL HARİTASI (14.06.1989, 09:45, İstanbul):
+FATİH'İN NATAL HARİTASI ({USER_BIRTH_DATA}):
 {natal_lines[0]}
   Güneş: İkizler, Ay: Terazi, Yükselen: Aslan
 {natal_text}
@@ -1941,7 +2073,7 @@ def generate_daily_brief():
 
     _validate_html_template_placeholders()
 
-    client = genai.Client(api_key=API_KEY)
+    client = _create_genai_client(API_KEY)
     print(f"Kullanılan Gemini modeli: {GEMINI_MODEL}")
     
     # Time Calc
