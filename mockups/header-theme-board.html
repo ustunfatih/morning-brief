@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Morning Brief Header Theme Mockups</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@500;700;800&family=Fraunces:opsz,wght@9..144,650;9..144,800&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f3efe6;
+      --ink: #171714;
+      --muted: #6f6a5d;
+      --line: #d8d0c0;
+      --chip: rgba(17, 17, 20, .68);
+      --chip-line: rgba(255, 255, 255, .54);
+      --shadow: 0 24px 70px rgba(24, 22, 18, .16);
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(54, 49, 39, .05) 1px, transparent 1px) 0 0 / 44px 44px,
+        linear-gradient(180deg, rgba(54, 49, 39, .04) 1px, transparent 1px) 0 0 / 44px 44px,
+        var(--paper);
+      font-family: "Newsreader", Georgia, serif;
+    }
+
+    .page {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+
+    .intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(38px, 7vw, 76px);
+      line-height: .88;
+      letter-spacing: 0;
+      max-width: 760px;
+    }
+
+    .intro p {
+      margin: 14px 0 0;
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .spec {
+      justify-self: end;
+      display: grid;
+      gap: 7px;
+      min-width: 180px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 251, 242, .6);
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #5f584a;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .theme-card {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .theme-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      min-width: 0;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      font-size: 12px;
+      color: #4f493d;
+    }
+
+    .theme-title strong {
+      overflow-wrap: anywhere;
+    }
+
+    .theme-title span {
+      color: #8b806d;
+      white-space: nowrap;
+    }
+
+    .mail-frame {
+      overflow: hidden;
+      border: 1px solid #c9c0ae;
+      border-radius: 8px;
+      background: #fffaf0;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      height: 28px;
+      padding: 8px 14px 0;
+      text-align: right;
+      color: #6e685b;
+      background: #ded6c7;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 10px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      aspect-ratio: 680 / 220;
+      min-height: 190px;
+      padding: 18px;
+      display: flex;
+      align-items: flex-end;
+      background: #1f2933;
+    }
+
+    .hero::before,
+    .hero::after,
+    .visual,
+    .visual span {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+    }
+
+    .visual {
+      z-index: -2;
+    }
+
+    .hero::after {
+      z-index: -1;
+      background: linear-gradient(90deg, rgba(0, 0, 0, .54), rgba(0, 0, 0, .14) 58%, rgba(0, 0, 0, .28));
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: min(520px, 100%);
+      padding: 11px 12px 12px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 8px;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(18, 21, 22, .66), rgba(18, 21, 22, .36));
+      box-shadow: 0 16px 44px rgba(0, 0, 0, .24);
+      backdrop-filter: blur(4px);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 8px;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 10px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 6px 8px;
+      border: 1px solid var(--chip-line);
+      border-radius: 7px;
+      background: var(--chip);
+      color: rgba(255, 255, 255, .94);
+      white-space: nowrap;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(25px, 4vw, 34px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      margin: 6px 0 0;
+      max-width: 42ch;
+      color: rgba(255, 255, 255, .82);
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    .mood-rail {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      padding: 8px;
+      border-top: 1px solid #d7cfbf;
+      background: #f9f3e7;
+    }
+
+    .rail-step {
+      min-height: 18px;
+      border-radius: 5px;
+      border: 1px solid rgba(31, 29, 24, .13);
+    }
+
+    .notes {
+      margin: 0;
+      color: #665e50;
+      font-size: 15px;
+      line-height: 1.34;
+    }
+
+    .doha {
+      background:
+        linear-gradient(180deg, #d9f1ed 0%, #f5d98c 58%, #ab6f43 100%);
+    }
+
+    .doha .visual {
+      background:
+        radial-gradient(circle at 13% 22%, rgba(255, 255, 255, .95) 0 8%, transparent 16%),
+        linear-gradient(120deg, rgba(255, 255, 255, .25), transparent 36%),
+        linear-gradient(180deg, transparent 56%, rgba(80, 58, 44, .55) 100%);
+    }
+
+    .doha .visual::before {
+      content: "";
+      position: absolute;
+      left: 42%;
+      right: -4%;
+      bottom: 0;
+      height: 45%;
+      background:
+        linear-gradient(90deg, transparent 0 3%, rgba(38, 53, 59, .58) 3% 9%, transparent 9% 12%, rgba(38, 53, 59, .66) 12% 19%, transparent 19% 24%, rgba(38, 53, 59, .5) 24% 32%, transparent 32% 35%, rgba(38, 53, 59, .72) 35% 43%, transparent 43% 49%, rgba(38, 53, 59, .56) 49% 58%, transparent 58% 64%, rgba(38, 53, 59, .68) 64% 71%, transparent 71% 77%, rgba(38, 53, 59, .5) 77% 86%, transparent 86%);
+      clip-path: polygon(0 42%, 8% 42%, 8% 16%, 15% 16%, 15% 0, 20% 0, 20% 42%, 29% 42%, 29% 26%, 36% 26%, 36% 42%, 46% 42%, 46% 10%, 53% 10%, 53% 42%, 63% 42%, 63% 22%, 72% 22%, 72% 42%, 100% 42%, 100% 100%, 0 100%);
+    }
+
+    .rail-doha .rail-step:nth-child(1) { background: #7ccf86; }
+    .rail-doha .rail-step:nth-child(2) { background: #80bfd0; }
+    .rail-doha .rail-step:nth-child(3) { background: #d9c7a1; }
+    .rail-doha .rail-step:nth-child(4) { background: #c98343; }
+    .rail-doha .rail-step:nth-child(5) { background: #74362f; }
+
+    .control {
+      background: #071b24;
+    }
+
+    .control .visual {
+      background:
+        linear-gradient(90deg, rgba(99, 190, 173, .16) 1px, transparent 1px) 0 0 / 28px 28px,
+        linear-gradient(180deg, rgba(99, 190, 173, .12) 1px, transparent 1px) 0 0 / 28px 28px,
+        radial-gradient(circle at 76% 18%, rgba(249, 191, 87, .34), transparent 24%),
+        linear-gradient(135deg, #071b24 0%, #123542 62%, #09212a 100%);
+    }
+
+    .control .visual::before,
+    .control .visual::after {
+      content: "";
+      position: absolute;
+      left: 46%;
+      right: 8%;
+      border: 2px solid rgba(119, 224, 205, .78);
+      border-right: 0;
+      border-bottom: 0;
+      transform: skewX(-22deg);
+    }
+
+    .control .visual::before {
+      top: 32%;
+      height: 46px;
+      box-shadow: 0 18px 0 rgba(252, 184, 64, .72), 0 42px 0 rgba(204, 81, 61, .62);
+    }
+
+    .control .visual::after {
+      top: 72%;
+      height: 1px;
+      border-color: rgba(255, 255, 255, .25);
+      box-shadow: 46px -86px 0 4px rgba(119, 224, 205, .28), 108px -38px 0 6px rgba(252, 184, 64, .25);
+    }
+
+    .rail-control .rail-step:nth-child(1) { background: #69d88d; }
+    .rail-control .rail-step:nth-child(2) { background: #67c4d6; }
+    .rail-control .rail-step:nth-child(3) { background: #657984; }
+    .rail-control .rail-step:nth-child(4) { background: #d69542; }
+    .rail-control .rail-step:nth-child(5) { background: #d34f3f; }
+
+    .editorial {
+      background: #eee4cf;
+    }
+
+    .editorial::after {
+      background: linear-gradient(90deg, rgba(19, 18, 15, .48), rgba(19, 18, 15, .08) 68%);
+    }
+
+    .editorial .visual {
+      background:
+        radial-gradient(circle at 78% 36%, rgba(231, 71, 45, .95) 0 8%, transparent 8.4%),
+        linear-gradient(112deg, transparent 0 43%, rgba(30, 37, 35, .86) 43% 60%, transparent 60%),
+        linear-gradient(90deg, rgba(255, 255, 255, .7), transparent 34%),
+        #efe3c8;
+    }
+
+    .editorial .visual::before {
+      content: "";
+      position: absolute;
+      left: 56%;
+      top: 16%;
+      width: 32%;
+      height: 68%;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .64), rgba(255, 255, 255, .18)),
+        linear-gradient(90deg, #23302d, #60765d);
+      border-radius: 2px;
+      box-shadow: -54px 42px 0 -10px rgba(177, 130, 71, .9), 74px -18px 0 -28px rgba(18, 22, 21, .9);
+      transform: rotate(-7deg);
+    }
+
+    .editorial .visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: .16;
+      background-image: radial-gradient(circle, #16130d 1px, transparent 1px);
+      background-size: 4px 4px;
+      mix-blend-mode: multiply;
+    }
+
+    .rail-editorial .rail-step:nth-child(1) { background: #d7d957; }
+    .rail-editorial .rail-step:nth-child(2) { background: #87a8b0; }
+    .rail-editorial .rail-step:nth-child(3) { background: #cabfa9; }
+    .rail-editorial .rail-step:nth-child(4) { background: #a95f36; }
+    .rail-editorial .rail-step:nth-child(5) { background: #331e1a; }
+
+    .weather {
+      background: #82c7d0;
+    }
+
+    .weather .visual {
+      background:
+        radial-gradient(circle at 18% 16%, rgba(255, 246, 192, .95), transparent 18%),
+        linear-gradient(180deg, #86d1d6 0%, #d9e4d7 46%, #c3ac84 100%);
+    }
+
+    .weather .visual::before {
+      content: "";
+      position: absolute;
+      left: -10%;
+      right: -10%;
+      top: 38%;
+      height: 44%;
+      background:
+        linear-gradient(178deg, transparent 0 18%, rgba(255, 255, 255, .42) 18% 25%, transparent 25% 36%, rgba(255, 255, 255, .34) 36% 46%, transparent 46% 58%, rgba(101, 108, 97, .18) 58% 66%, transparent 66%);
+      transform: rotate(-4deg);
+    }
+
+    .weather .visual::after {
+      content: "";
+      position: absolute;
+      right: 9%;
+      top: 12%;
+      width: 28%;
+      height: 76%;
+      background: repeating-linear-gradient(112deg, rgba(76, 67, 54, .34) 0 2px, transparent 2px 18px);
+      opacity: .55;
+      transform: skewX(-12deg);
+    }
+
+    .rail-weather .rail-step:nth-child(1) { background: #ffe66f; }
+    .rail-weather .rail-step:nth-child(2) { background: #81c8d7; }
+    .rail-weather .rail-step:nth-child(3) { background: #9fa79d; }
+    .rail-weather .rail-step:nth-child(4) { background: #be8b51; }
+    .rail-weather .rail-step:nth-child(5) { background: #3e4b55; }
+
+    .finance {
+      background: #11130f;
+    }
+
+    .finance .visual {
+      background:
+        linear-gradient(90deg, rgba(246, 236, 203, .08) 1px, transparent 1px) 0 0 / 34px 34px,
+        linear-gradient(180deg, rgba(246, 236, 203, .08) 1px, transparent 1px) 0 0 / 34px 34px,
+        radial-gradient(circle at 70% 30%, rgba(211, 67, 45, .36), transparent 22%),
+        #11130f;
+    }
+
+    .finance .visual::before {
+      content: "";
+      position: absolute;
+      left: 38%;
+      right: 6%;
+      top: 18%;
+      bottom: 18%;
+      background:
+        linear-gradient(102deg, transparent 0 8%, #75d46e 8% 9.2%, transparent 9.2% 20%, #75d46e 20% 21.2%, transparent 21.2% 34%, #e2bb53 34% 35.2%, transparent 35.2% 44%, #e2bb53 44% 45.2%, transparent 45.2% 58%, #d3432d 58% 59.2%, transparent 59.2% 70%, #d3432d 70% 71.2%, transparent 71.2% 100%),
+        repeating-linear-gradient(90deg, transparent 0 18px, rgba(246, 236, 203, .42) 18px 20px, transparent 20px 42px);
+      clip-path: polygon(0 72%, 8% 56%, 16% 61%, 25% 38%, 34% 42%, 44% 20%, 55% 54%, 66% 30%, 76% 66%, 88% 40%, 100% 46%, 100% 100%, 0 100%);
+      opacity: .95;
+    }
+
+    .finance .visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 0 72%, rgba(246, 236, 203, .12) 72% 73%, transparent 73%);
+    }
+
+    .rail-finance .rail-step:nth-child(1) { background: #75d46e; }
+    .rail-finance .rail-step:nth-child(2) { background: #52aeba; }
+    .rail-finance .rail-step:nth-child(3) { background: #777970; }
+    .rail-finance .rail-step:nth-child(4) { background: #e2bb53; }
+    .rail-finance .rail-step:nth-child(5) { background: #d3432d; }
+
+    .astro {
+      background: #101820;
+    }
+
+    .astro .visual {
+      background:
+        radial-gradient(circle at 76% 42%, rgba(224, 176, 93, .2), transparent 29%),
+        radial-gradient(circle at 78% 42%, transparent 0 19%, rgba(224, 176, 93, .62) 19.4% 20%, transparent 20.5% 28%, rgba(224, 176, 93, .36) 28.4% 29%, transparent 29.5%),
+        radial-gradient(circle at 64% 22%, rgba(247, 239, 206, .92) 0 1.4%, transparent 1.8%),
+        radial-gradient(circle at 88% 62%, rgba(247, 239, 206, .74) 0 1%, transparent 1.4%),
+        linear-gradient(135deg, #101820 0%, #18313a 58%, #3c241e 100%);
+    }
+
+    .astro .visual::before {
+      content: "";
+      position: absolute;
+      right: 7%;
+      top: -18%;
+      width: 48%;
+      aspect-ratio: 1;
+      border: 1px solid rgba(224, 176, 93, .42);
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 28px rgba(224, 176, 93, .05), 0 0 0 42px rgba(224, 176, 93, .08);
+    }
+
+    .astro .visual::after {
+      content: "";
+      position: absolute;
+      left: 40%;
+      top: 16%;
+      width: 45%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(224, 176, 93, .84), transparent);
+      transform: rotate(-26deg);
+      box-shadow: 40px 52px 0 rgba(224, 176, 93, .45), 96px 80px 0 rgba(224, 176, 93, .28);
+    }
+
+    .rail-astro .rail-step:nth-child(1) { background: #c8c86c; }
+    .rail-astro .rail-step:nth-child(2) { background: #68a6b4; }
+    .rail-astro .rail-step:nth-child(3) { background: #92908b; }
+    .rail-astro .rail-step:nth-child(4) { background: #b47a3d; }
+    .rail-astro .rail-step:nth-child(5) { background: #7b302b; }
+
+    .minimal {
+      background: #dcd8cd;
+    }
+
+    .minimal::after {
+      background: linear-gradient(90deg, rgba(12, 12, 11, .5), transparent 62%);
+    }
+
+    .minimal .visual {
+      background:
+        linear-gradient(90deg, #2f704f 0 20%, #f0eee5 20% 54%, #1d2422 54% 69%, #c84f31 69% 73%, #d8c6a1 73%);
+    }
+
+    .minimal .visual::before {
+      content: "";
+      position: absolute;
+      right: 7%;
+      top: 18%;
+      width: 28%;
+      height: 60%;
+      border: 2px solid rgba(28, 29, 25, .7);
+      border-radius: 2px;
+      transform: rotate(-3deg);
+      background:
+        linear-gradient(180deg, transparent 0 27%, rgba(28, 29, 25, .7) 27% 29%, transparent 29% 58%, rgba(28, 29, 25, .7) 58% 60%, transparent 60%);
+    }
+
+    .minimal .visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(22, 21, 18, .22) 1px, transparent 1px);
+      background-size: 5px 5px;
+      opacity: .24;
+    }
+
+    .rail-minimal .rail-step:nth-child(1) { background: #2f704f; }
+    .rail-minimal .rail-step:nth-child(2) { background: #668c91; }
+    .rail-minimal .rail-step:nth-child(3) { background: #aaa69b; }
+    .rail-minimal .rail-step:nth-child(4) { background: #b98542; }
+    .rail-minimal .rail-step:nth-child(5) { background: #c84f31; }
+
+    .terrain {
+      background: #213c34;
+    }
+
+    .terrain .visual {
+      background:
+        radial-gradient(ellipse at 72% 42%, transparent 0 9%, rgba(236, 216, 156, .52) 9.4% 10.5%, transparent 11% 18%, rgba(236, 216, 156, .38) 18.4% 19.4%, transparent 20% 28%, rgba(236, 216, 156, .24) 28.4% 29.4%, transparent 30%),
+        radial-gradient(ellipse at 34% 78%, transparent 0 10%, rgba(105, 178, 128, .46) 10.4% 11.2%, transparent 11.8% 21%, rgba(105, 178, 128, .34) 21.4% 22.2%, transparent 23%),
+        linear-gradient(135deg, #203d34 0%, #687f62 46%, #c29a5c 100%);
+    }
+
+    .terrain .visual::before {
+      content: "";
+      position: absolute;
+      inset: 42% -8% -12%;
+      background:
+        linear-gradient(170deg, transparent 0 23%, rgba(26, 45, 38, .58) 23% 25%, transparent 25% 38%, rgba(26, 45, 38, .5) 38% 40%, transparent 40% 57%, rgba(26, 45, 38, .54) 57% 59%, transparent 59%),
+        linear-gradient(12deg, rgba(13, 27, 24, .56), transparent 70%);
+      transform: rotate(-2deg);
+    }
+
+    .terrain .visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 86% 20%, rgba(255, 244, 201, .46), transparent 15%);
+    }
+
+    .rail-terrain .rail-step:nth-child(1) { background: #85bc76; }
+    .rail-terrain .rail-step:nth-child(2) { background: #68a5a5; }
+    .rail-terrain .rail-step:nth-child(3) { background: #837f68; }
+    .rail-terrain .rail-step:nth-child(4) { background: #c29a5c; }
+    .rail-terrain .rail-step:nth-child(5) { background: #663f35; }
+
+    @media (max-width: 900px) {
+      .intro,
+      .board {
+        grid-template-columns: 1fr;
+      }
+
+      .spec {
+        justify-self: stretch;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        width: min(100% - 20px, 1100px);
+        padding-top: 22px;
+      }
+
+      .hero {
+        min-height: 220px;
+        padding: 12px;
+      }
+
+      .theme-title {
+        display: grid;
+        gap: 4px;
+      }
+
+      .theme-title span {
+        white-space: normal;
+      }
+
+      .hero-content {
+        padding: 10px;
+      }
+
+      .hero p {
+        max-width: 30ch;
+        font-size: 11px;
+      }
+
+      .chip {
+        min-height: 20px;
+        padding: 5px 7px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <h1 id="page-title">Morning Brief Hero Concepts</h1>
+        <p>Eight visual systems for the five mood-score scenarios. Each mockup uses the current email hero proportions and the same practical overlay content.</p>
+      </div>
+      <div class="spec" aria-label="Design constraints">
+        <span>Canvas 680 x 220</span>
+        <span>Email-safe structure</span>
+        <span>Five mood states</span>
+      </div>
+    </section>
+
+    <section class="board" aria-label="Theme mockups">
+      <article class="theme-card">
+        <div class="theme-title"><strong>01 Doha Light Register</strong><span>personal, local, premium</span></div>
+        <div class="mail-frame">
+          <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+          <div class="hero doha">
+            <div class="visual"></div>
+            <div class="hero-content">
+              <div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 2/5</span><span class="chip">Tasks 9</span></div>
+              <h2>Gunaydin, Fatih.</h2>
+              <p>Doha morning light, balanced momentum, clear next actions.</p>
+            </div>
+          </div>
+          <div class="mood-rail rail-doha"><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span></div>
+        </div>
+        <p class="notes">A local atmosphere system: sunrise, sea haze, glass skyline, desert warmth. Strong candidate for a brief that feels personal.</p>
+      </article>
+
+      <article class="theme-card">
+        <div class="theme-title"><strong>02 The Control Room</strong><span>operational, crisp</span></div>
+        <div class="mail-frame">
+          <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+          <div class="hero control">
+            <div class="visual"></div>
+            <div class="hero-content">
+              <div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 3/5</span><span class="chip">Tasks 9</span></div>
+              <h2>Gunaydin, Fatih.</h2>
+              <p>Signals, tasks, markets, and weather resolved into one console.</p>
+            </div>
+          </div>
+          <div class="mood-rail rail-control"><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span></div>
+        </div>
+        <p class="notes">A daily operating-system look with gridlines, signal traces, and clear alert levels. Probably the most utilitarian choice.</p>
+      </article>
+
+      <article class="theme-card">
+        <div class="theme-title"><strong>03 Editorial Morning Cover</strong><span>magazine, tactile</span></div>
+        <div class="mail-frame">
+          <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+          <div class="hero editorial">
+            <div class="visual"></div>
+            <div class="hero-content">
+              <div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 1/5</span><span class="chip">Tasks 9</span></div>
+              <h2>Gunaydin, Fatih.</h2>
+              <p>Quiet luxury, paper grain, dramatic crop, restrained color.</p>
+            </div>
+          </div>
+          <div class="mood-rail rail-editorial"><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span></div>
+        </div>
+        <p class="notes">Less dashboard, more object of taste. This would make each brief feel collectible without becoming noisy.</p>
+      </article>
+
+      <article class="theme-card">
+        <div class="theme-title"><strong>04 Weather As Mood</strong><span>atmospheric, intuitive</span></div>
+        <div class="mail-frame">
+          <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+          <div class="hero weather">
+            <div class="visual"></div>
+            <div class="hero-content">
+              <div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 4/5</span><span class="chip">Tasks 9</span></div>
+              <h2>Gunaydin, Fatih.</h2>
+              <p>Pressure, clarity, haze, and wind become the day signal.</p>
+            </div>
+          </div>
+          <div class="mood-rail rail-weather"><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span></div>
+        </div>
+        <p class="notes">Natural and instantly readable: clear days for positive scores, low-pressure drama for caution and warning states.</p>
+      </article>
+
+      <article class="theme-card">
+        <div class="theme-title"><strong>05 Financial Seismograph</strong><span>market-aware, tense</span></div>
+        <div class="mail-frame">
+          <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+          <div class="hero finance">
+            <div class="visual"></div>
+            <div class="hero-content">
+              <div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 5/5</span><span class="chip">Tasks 9</span></div>
+              <h2>Gunaydin, Fatih.</h2>
+              <p>Volatility field, price pressure, decision tempo, alert edge.</p>
+            </div>
+          </div>
+          <div class="mood-rail rail-finance"><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span></div>
+        </div>
+        <p class="notes">The most intense direction. Excellent if the brief is primarily a market and decision cockpit.</p>
+      </article>
+
+      <article class="theme-card">
+        <div class="theme-title"><strong>06 Astro-Mechanical Almanac</strong><span>poetic, precise</span></div>
+        <div class="mail-frame">
+          <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+          <div class="hero astro">
+            <div class="visual"></div>
+            <div class="hero-content">
+              <div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 3/5</span><span class="chip">Tasks 9</span></div>
+              <h2>Gunaydin, Fatih.</h2>
+              <p>Orbital arcs, brass instruments, and celestial timing cues.</p>
+            </div>
+          </div>
+          <div class="mood-rail rail-astro"><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span></div>
+        </div>
+        <p class="notes">A strong fit if astrology and timing are a core part of the brief identity. More ritual than dashboard.</p>
+      </article>
+
+      <article class="theme-card">
+        <div class="theme-title"><strong>07 Minimal Mood Stamp</strong><span>brutal, direct</span></div>
+        <div class="mail-frame">
+          <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+          <div class="hero minimal">
+            <div class="visual"></div>
+            <div class="hero-content">
+              <div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 2/5</span><span class="chip">Tasks 9</span></div>
+              <h2>Gunaydin, Fatih.</h2>
+              <p>Flat fields, hard edges, one unmistakable status mark.</p>
+            </div>
+          </div>
+          <div class="mood-rail rail-minimal"><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span></div>
+        </div>
+        <p class="notes">Fast to understand and easy to maintain. It would age well, especially in email clients.</p>
+      </article>
+
+      <article class="theme-card">
+        <div class="theme-title"><strong>08 Daily Terrain</strong><span>organic, warm</span></div>
+        <div class="mail-frame">
+          <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+          <div class="hero terrain">
+            <div class="visual"></div>
+            <div class="hero-content">
+              <div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 4/5</span><span class="chip">Tasks 9</span></div>
+              <h2>Gunaydin, Fatih.</h2>
+              <p>Contours, elevation, ridges, and the shape of the day ahead.</p>
+            </div>
+          </div>
+          <div class="mood-rail rail-terrain"><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span><span class="rail-step"></span></div>
+        </div>
+        <p class="notes">Warm and memorable without feeling decorative. A good middle path between personal and analytical.</p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

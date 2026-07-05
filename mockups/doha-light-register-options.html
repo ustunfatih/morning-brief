@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Doha Light Register Options</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@500;700;800&family=Fraunces:opsz,wght@9..144,650;9..144,800&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f4efe4;
+      --ink: #181713;
+      --muted: #716958;
+      --line: #d7cdb8;
+      --card: #fffaf0;
+      --chip: rgba(12, 15, 16, .72);
+      --shadow: 0 24px 70px rgba(41, 35, 23, .15);
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(82, 72, 50, .05) 1px, transparent 1px) 0 0 / 42px 42px,
+        linear-gradient(180deg, rgba(82, 72, 50, .04) 1px, transparent 1px) 0 0 / 42px 42px,
+        radial-gradient(circle at 80% 0%, rgba(213, 176, 92, .16), transparent 32%),
+        var(--paper);
+      font-family: "Newsreader", Georgia, serif;
+    }
+
+    .page {
+      width: min(1240px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 60px;
+    }
+
+    .intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 860px;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(40px, 7vw, 82px);
+      line-height: .88;
+      letter-spacing: 0;
+    }
+
+    .intro p {
+      max-width: 760px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.36;
+    }
+
+    .spec {
+      display: grid;
+      gap: 7px;
+      min-width: 210px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 250, 240, .7);
+      color: #5e5543;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      box-shadow: 0 10px 30px rgba(45, 39, 27, .06);
+    }
+
+    .mood-group {
+      margin-top: 34px;
+    }
+
+    .group-head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: baseline;
+      margin-bottom: 12px;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      color: #4f4738;
+    }
+
+    .group-head strong {
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .group-head span {
+      min-width: 0;
+      color: #817662;
+      font-size: 11px;
+    }
+
+    .group-head i {
+      display: block;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .option {
+      min-width: 0;
+      display: grid;
+      gap: 9px;
+    }
+
+    .option-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #4f4738;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 11px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .option-title strong {
+      overflow-wrap: anywhere;
+    }
+
+    .option-title span {
+      color: #8b806d;
+      white-space: nowrap;
+    }
+
+    .frame {
+      overflow: hidden;
+      border: 1px solid #cbbfa8;
+      border-radius: 8px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      height: 24px;
+      padding: 7px 12px 0;
+      text-align: right;
+      color: #706653;
+      background: #ded4c0;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 9px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .hero {
+      --hero-bg: #1f2933;
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      aspect-ratio: 680 / 220;
+      min-height: 164px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-end;
+      background: var(--hero-bg);
+    }
+
+    .hero::before,
+    .hero::after,
+    .visual,
+    .shape,
+    .shape::before,
+    .shape::after {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .hero::before,
+    .hero::after,
+    .shape::before,
+    .shape::after {
+      content: "";
+    }
+
+    .hero::after {
+      z-index: -1;
+      background: linear-gradient(90deg, rgba(0, 0, 0, .58), rgba(0, 0, 0, .1) 62%, rgba(0, 0, 0, .24));
+    }
+
+    .visual {
+      z-index: -3;
+      overflow: hidden;
+    }
+
+    .shape {
+      z-index: -2;
+      overflow: hidden;
+    }
+
+    .grain::before {
+      z-index: -1;
+      opacity: .18;
+      background-image: radial-gradient(circle, rgba(20, 17, 12, .62) 1px, transparent 1px);
+      background-size: 4px 4px;
+      mix-blend-mode: multiply;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      width: min(500px, 100%);
+      padding: 10px 11px 11px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 8px;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(14, 17, 18, .69), rgba(14, 17, 18, .38));
+      box-shadow: 0 16px 44px rgba(0, 0, 0, .25);
+      backdrop-filter: blur(4px);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 9px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 21px;
+      padding: 6px 7px;
+      border: 1px solid rgba(255, 255, 255, .55);
+      border-radius: 7px;
+      background: var(--chip);
+      white-space: nowrap;
+    }
+
+    .content h2 {
+      margin: 0;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(24px, 3.6vw, 32px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .content p {
+      max-width: 39ch;
+      margin: 6px 0 0;
+      color: rgba(255, 255, 255, .84);
+      font-size: 12px;
+      line-height: 1.22;
+    }
+
+    .palette {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      padding: 8px;
+      border-top: 1px solid #d8cdb8;
+      background: #faf4e8;
+    }
+
+    .swatch {
+      height: 17px;
+      border-radius: 5px;
+      border: 1px solid rgba(35, 29, 18, .13);
+    }
+
+    .notes {
+      margin: 0;
+      color: #665e50;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .m1a .swatch:nth-child(1), .m1b .swatch:nth-child(1), .m1c .swatch:nth-child(1) { background: #dbf2d5; }
+    .m1a .swatch:nth-child(2), .m1b .swatch:nth-child(2), .m1c .swatch:nth-child(2) { background: #f7d777; }
+    .m1a .swatch:nth-child(3), .m1b .swatch:nth-child(3), .m1c .swatch:nth-child(3) { background: #83c6c0; }
+    .m1a .swatch:nth-child(4), .m1b .swatch:nth-child(4), .m1c .swatch:nth-child(4) { background: #b76d3a; }
+    .m1a .swatch:nth-child(5), .m1b .swatch:nth-child(5), .m1c .swatch:nth-child(5) { background: #24413b; }
+
+    .m2a .swatch:nth-child(1), .m2b .swatch:nth-child(1), .m2c .swatch:nth-child(1) { background: #d8ebec; }
+    .m2a .swatch:nth-child(2), .m2b .swatch:nth-child(2), .m2c .swatch:nth-child(2) { background: #75b7c2; }
+    .m2a .swatch:nth-child(3), .m2b .swatch:nth-child(3), .m2c .swatch:nth-child(3) { background: #b9a979; }
+    .m2a .swatch:nth-child(4), .m2b .swatch:nth-child(4), .m2c .swatch:nth-child(4) { background: #567275; }
+    .m2a .swatch:nth-child(5), .m2b .swatch:nth-child(5), .m2c .swatch:nth-child(5) { background: #203c42; }
+
+    .m3a .swatch:nth-child(1), .m3b .swatch:nth-child(1), .m3c .swatch:nth-child(1) { background: #eee8d8; }
+    .m3a .swatch:nth-child(2), .m3b .swatch:nth-child(2), .m3c .swatch:nth-child(2) { background: #c6bda7; }
+    .m3a .swatch:nth-child(3), .m3b .swatch:nth-child(3), .m3c .swatch:nth-child(3) { background: #8f9790; }
+    .m3a .swatch:nth-child(4), .m3b .swatch:nth-child(4), .m3c .swatch:nth-child(4) { background: #546766; }
+    .m3a .swatch:nth-child(5), .m3b .swatch:nth-child(5), .m3c .swatch:nth-child(5) { background: #2e3836; }
+
+    .m4a .swatch:nth-child(1), .m4b .swatch:nth-child(1), .m4c .swatch:nth-child(1) { background: #e0c085; }
+    .m4a .swatch:nth-child(2), .m4b .swatch:nth-child(2), .m4c .swatch:nth-child(2) { background: #c58846; }
+    .m4a .swatch:nth-child(3), .m4b .swatch:nth-child(3), .m4c .swatch:nth-child(3) { background: #8c6a50; }
+    .m4a .swatch:nth-child(4), .m4b .swatch:nth-child(4), .m4c .swatch:nth-child(4) { background: #485c5a; }
+    .m4a .swatch:nth-child(5), .m4b .swatch:nth-child(5), .m4c .swatch:nth-child(5) { background: #422d27; }
+
+    .m5a .swatch:nth-child(1), .m5b .swatch:nth-child(1), .m5c .swatch:nth-child(1) { background: #331e1c; }
+    .m5a .swatch:nth-child(2), .m5b .swatch:nth-child(2), .m5c .swatch:nth-child(2) { background: #7e332d; }
+    .m5a .swatch:nth-child(3), .m5b .swatch:nth-child(3), .m5c .swatch:nth-child(3) { background: #dd7041; }
+    .m5a .swatch:nth-child(4), .m5b .swatch:nth-child(4), .m5c .swatch:nth-child(4) { background: #b69359; }
+    .m5a .swatch:nth-child(5), .m5b .swatch:nth-child(5), .m5c .swatch:nth-child(5) { background: #15252a; }
+
+    .lusail-sunrise {
+      --hero-bg: #b8ded6;
+    }
+
+    .lusail-sunrise .visual {
+      background:
+        radial-gradient(circle at 14% 23%, rgba(255, 246, 179, .98) 0 8%, transparent 17%),
+        linear-gradient(180deg, #b8ded6 0%, #f5d280 58%, #a76439 100%);
+    }
+
+    .lusail-sunrise .shape::before {
+      left: 45%;
+      right: -4%;
+      top: 36%;
+      background: linear-gradient(90deg, transparent 0 4%, rgba(36, 58, 58, .52) 4% 11%, transparent 11% 15%, rgba(36, 58, 58, .64) 15% 23%, transparent 23% 30%, rgba(36, 58, 58, .5) 30% 38%, transparent 38% 43%, rgba(36, 58, 58, .68) 43% 51%, transparent 51% 57%, rgba(36, 58, 58, .56) 57% 65%, transparent 65% 72%, rgba(36, 58, 58, .62) 72% 82%, transparent 82%);
+      clip-path: polygon(0 58%, 7% 58%, 7% 26%, 13% 26%, 13% 7%, 19% 7%, 19% 58%, 29% 58%, 29% 35%, 36% 35%, 36% 58%, 47% 58%, 47% 18%, 54% 18%, 54% 58%, 65% 58%, 65% 38%, 74% 38%, 74% 58%, 100% 58%, 100% 100%, 0 100%);
+    }
+
+    .mia-palms .visual {
+      background:
+        radial-gradient(circle at 19% 19%, rgba(255, 241, 179, .88), transparent 18%),
+        linear-gradient(180deg, #d4eee1 0%, #f0d98c 54%, #517e68 100%);
+    }
+
+    .mia-palms .shape::before {
+      inset: 54% -8% -4% 46%;
+      background:
+        radial-gradient(ellipse at 18% 0%, rgba(23, 82, 53, .66) 0 18%, transparent 19%),
+        radial-gradient(ellipse at 36% 6%, rgba(23, 82, 53, .58) 0 16%, transparent 17%),
+        radial-gradient(ellipse at 56% 2%, rgba(23, 82, 53, .62) 0 18%, transparent 19%),
+        linear-gradient(90deg, transparent 0 18%, rgba(52, 67, 47, .62) 18% 20%, transparent 20% 42%, rgba(52, 67, 47, .62) 42% 44%, transparent 44% 67%, rgba(52, 67, 47, .62) 67% 69%, transparent 69%);
+    }
+
+    .mia-palms .shape::after {
+      left: 58%;
+      right: 3%;
+      top: 44%;
+      bottom: 19%;
+      border-radius: 999px 999px 12px 12px;
+      background: rgba(246, 232, 196, .42);
+      box-shadow: -36px 28px 0 -18px rgba(23, 82, 53, .42), 60px 24px 0 -22px rgba(177, 109, 58, .48);
+      transform: rotate(-5deg);
+    }
+
+    .souq-lanterns .visual {
+      background:
+        radial-gradient(circle at 20% 25%, rgba(255, 230, 147, .8), transparent 12%),
+        radial-gradient(circle at 73% 36%, rgba(255, 185, 72, .42), transparent 16%),
+        linear-gradient(180deg, #d6ebe0 0%, #d7ac6c 61%, #71432f 100%);
+    }
+
+    .souq-lanterns .shape::before {
+      inset: 18% 6% 12% 46%;
+      background:
+        repeating-linear-gradient(90deg, transparent 0 26px, rgba(65, 50, 37, .52) 26px 29px, transparent 29px 52px),
+        repeating-linear-gradient(90deg, transparent 0 42px, rgba(255, 214, 117, .66) 42px 52px, transparent 52px 86px);
+      clip-path: polygon(0 28%, 100% 4%, 100% 100%, 0 82%);
+      opacity: .9;
+    }
+
+    .souq-lanterns .shape::after {
+      left: 54%;
+      top: 12%;
+      width: 38%;
+      height: 26%;
+      background: repeating-linear-gradient(90deg, rgba(52, 42, 32, .55) 0 3px, transparent 3px 28px);
+      transform: rotate(-8deg);
+    }
+
+    .west-bay-glass .visual {
+      background:
+        radial-gradient(circle at 78% 22%, rgba(255, 238, 190, .6), transparent 20%),
+        linear-gradient(180deg, #c6e8ea 0%, #8dc0c7 53%, #38595c 100%);
+    }
+
+    .west-bay-glass .shape::before {
+      left: 48%;
+      right: -2%;
+      top: 18%;
+      bottom: 0;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, .18), transparent 18%),
+        linear-gradient(90deg, rgba(42, 74, 79, .56) 0 8%, transparent 8% 13%, rgba(42, 74, 79, .66) 13% 24%, transparent 24% 31%, rgba(42, 74, 79, .52) 31% 44%, transparent 44% 51%, rgba(42, 74, 79, .7) 51% 65%, transparent 65% 70%, rgba(42, 74, 79, .58) 70% 84%, transparent 84%);
+      clip-path: polygon(0 45%, 7% 45%, 7% 16%, 16% 16%, 16% 30%, 23% 30%, 23% 4%, 31% 4%, 31% 45%, 43% 45%, 43% 22%, 52% 22%, 52% 45%, 65% 45%, 65% 8%, 73% 8%, 73% 45%, 100% 45%, 100% 100%, 0 100%);
+    }
+
+    .corniche-dhow .visual {
+      background:
+        linear-gradient(180deg, #d6eef0 0%, #9ccbd1 48%, #4d8585 49%, #285053 100%);
+    }
+
+    .corniche-dhow .shape::before {
+      left: 50%;
+      top: 41%;
+      width: 38%;
+      height: 28%;
+      background: rgba(240, 221, 173, .7);
+      clip-path: polygon(0 90%, 35% 0, 42% 84%, 100% 84%, 84% 100%, 18% 100%);
+      transform: rotate(-4deg);
+    }
+
+    .corniche-dhow .shape::after {
+      left: 44%;
+      right: 7%;
+      bottom: 20%;
+      height: 18%;
+      background: rgba(84, 56, 39, .72);
+      clip-path: polygon(0 40%, 72% 40%, 100% 0, 86% 72%, 18% 100%);
+      box-shadow: 0 18px 0 rgba(255, 255, 255, .12);
+    }
+
+    .pearl-marina .visual {
+      background:
+        radial-gradient(circle at 82% 20%, rgba(245, 224, 161, .55), transparent 17%),
+        linear-gradient(180deg, #d5e9e7 0%, #9fc5c2 48%, #597977 100%);
+    }
+
+    .pearl-marina .shape::before {
+      inset: 18% -2% 20% 47%;
+      background:
+        repeating-linear-gradient(105deg, transparent 0 18px, rgba(255, 255, 255, .62) 18px 20px, transparent 20px 38px),
+        linear-gradient(90deg, rgba(35, 60, 61, .5), transparent 64%);
+      clip-path: polygon(0 75%, 100% 12%, 100% 100%, 0 100%);
+    }
+
+    .pearl-marina .shape::after {
+      inset: 62% 5% 16% 50%;
+      border-top: 2px solid rgba(255, 255, 255, .34);
+      border-bottom: 2px solid rgba(255, 255, 255, .22);
+      transform: skewY(-4deg);
+    }
+
+    .qnl-limestone .visual {
+      background:
+        linear-gradient(105deg, rgba(255, 255, 255, .48), transparent 45%),
+        linear-gradient(180deg, #eee8d7 0%, #cfc2a9 61%, #6f7770 100%);
+    }
+
+    .qnl-limestone .shape::before {
+      inset: 14% 8% 16% 47%;
+      background:
+        repeating-linear-gradient(90deg, rgba(80, 92, 88, .44) 0 2px, transparent 2px 24px),
+        linear-gradient(135deg, rgba(245, 239, 222, .58), rgba(79, 93, 90, .54));
+      clip-path: polygon(0 20%, 82% 0, 100% 100%, 8% 86%);
+    }
+
+    .qnl-limestone .shape::after {
+      left: 57%;
+      top: 26%;
+      width: 30%;
+      height: 46%;
+      border: 1px solid rgba(61, 72, 70, .45);
+      transform: rotate(-9deg);
+    }
+
+    .msheireb-shade .visual {
+      background:
+        linear-gradient(135deg, #ede6d8 0%, #b6b3a2 52%, #4c5f5c 100%);
+    }
+
+    .msheireb-shade .shape::before {
+      inset: 0 0 0 48%;
+      background:
+        repeating-linear-gradient(90deg, rgba(34, 52, 48, .54) 0 14px, rgba(230, 220, 198, .35) 14px 22px, transparent 22px 40px),
+        linear-gradient(180deg, transparent, rgba(39, 51, 48, .56));
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 18% 100%);
+    }
+
+    .msheireb-shade .shape::after {
+      inset: 22% 12% 12% 56%;
+      border: 1px solid rgba(255, 255, 255, .26);
+      background: repeating-linear-gradient(45deg, transparent 0 13px, rgba(255, 255, 255, .18) 13px 15px);
+    }
+
+    .mia-stone-water .visual {
+      background:
+        linear-gradient(180deg, #ebe5d6 0%, #c6c2ae 50%, #667a77 51%, #334744 100%);
+    }
+
+    .mia-stone-water .shape::before {
+      inset: 17% 10% 36% 56%;
+      background: rgba(237, 229, 207, .68);
+      clip-path: polygon(18% 0, 88% 0, 100% 100%, 0 100%);
+      box-shadow: -36px 30px 0 -10px rgba(83, 95, 91, .42);
+    }
+
+    .mia-stone-water .shape::after {
+      inset: 58% 5% 20% 45%;
+      background: repeating-linear-gradient(180deg, rgba(255, 255, 255, .22) 0 2px, transparent 2px 12px);
+      transform: skewX(-18deg);
+    }
+
+    .inland-sea-dunes .visual {
+      background:
+        radial-gradient(circle at 78% 20%, rgba(236, 188, 103, .5), transparent 20%),
+        linear-gradient(180deg, #b9c8bf 0%, #c99658 57%, #6a4a37 100%);
+    }
+
+    .inland-sea-dunes .shape::before {
+      inset: 38% -12% -10% 38%;
+      background:
+        linear-gradient(165deg, transparent 0 22%, rgba(255, 226, 156, .36) 22% 24%, transparent 24% 40%, rgba(90, 62, 43, .36) 40% 42%, transparent 42%),
+        linear-gradient(10deg, rgba(110, 72, 43, .72), rgba(216, 166, 84, .36));
+      border-radius: 50% 0 0 0;
+      transform: rotate(-3deg);
+    }
+
+    .inland-sea-dunes .shape::after {
+      inset: 0;
+      background: repeating-linear-gradient(100deg, transparent 0 16px, rgba(255, 238, 190, .18) 16px 18px, transparent 18px 42px);
+      opacity: .65;
+    }
+
+    .al-wakrah-haze .visual {
+      background:
+        linear-gradient(180deg, #c5d1c8 0%, #c89a5e 55%, #584338 100%);
+    }
+
+    .al-wakrah-haze .shape::before {
+      left: 44%;
+      right: 6%;
+      top: 43%;
+      bottom: 28%;
+      background: rgba(66, 51, 43, .64);
+      clip-path: polygon(0 80%, 18% 20%, 28% 78%, 100% 78%, 86% 100%, 12% 100%);
+    }
+
+    .al-wakrah-haze .shape::after {
+      inset: 16% 6% 10% 48%;
+      background:
+        repeating-linear-gradient(90deg, transparent 0 26px, rgba(255, 220, 151, .16) 26px 28px),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 226, 174, .2), transparent 54%);
+      filter: blur(1px);
+    }
+
+    .desert-road .visual {
+      background:
+        linear-gradient(180deg, #d1c5aa 0%, #b98651 58%, #352e2a 100%);
+    }
+
+    .desert-road .shape::before {
+      inset: 32% 4% 0 46%;
+      background:
+        linear-gradient(100deg, transparent 0 37%, rgba(48, 48, 45, .68) 37% 62%, transparent 62%),
+        linear-gradient(180deg, rgba(255, 222, 156, .2), rgba(47, 39, 34, .6));
+      clip-path: polygon(30% 0, 58% 0, 100% 100%, 0 100%);
+    }
+
+    .desert-road .shape::after {
+      left: 63%;
+      top: 48%;
+      width: 7%;
+      height: 48%;
+      background: repeating-linear-gradient(180deg, rgba(244, 217, 148, .7) 0 12px, transparent 12px 24px);
+      transform: perspective(90px) rotateX(24deg);
+    }
+
+    .dust-skyline .visual {
+      background:
+        radial-gradient(circle at 78% 28%, rgba(221, 112, 65, .34), transparent 18%),
+        linear-gradient(180deg, #5b3a34 0%, #8a5036 52%, #2b2220 100%);
+    }
+
+    .dust-skyline .shape::before {
+      left: 46%;
+      right: -2%;
+      top: 30%;
+      bottom: 0;
+      background: rgba(23, 31, 32, .58);
+      clip-path: polygon(0 62%, 7% 62%, 7% 24%, 13% 24%, 13% 62%, 23% 62%, 23% 8%, 31% 8%, 31% 62%, 42% 62%, 42% 35%, 51% 35%, 51% 62%, 62% 62%, 62% 16%, 70% 16%, 70% 62%, 100% 62%, 100% 100%, 0 100%);
+    }
+
+    .dust-skyline .shape::after {
+      inset: 0;
+      background: repeating-linear-gradient(100deg, rgba(238, 144, 79, .18) 0 3px, transparent 3px 28px);
+      opacity: .8;
+    }
+
+    .hamad-port .visual {
+      background:
+        radial-gradient(circle at 80% 25%, rgba(235, 102, 66, .38), transparent 16%),
+        linear-gradient(180deg, #24343a 0%, #552d2a 55%, #151b1e 100%);
+    }
+
+    .hamad-port .shape::before {
+      inset: 20% 4% 24% 48%;
+      background:
+        linear-gradient(90deg, rgba(221, 112, 65, .72) 0 4px, transparent 4px 58px, rgba(221, 112, 65, .66) 58px 62px, transparent 62px),
+        repeating-linear-gradient(135deg, transparent 0 18px, rgba(235, 102, 66, .38) 18px 20px, transparent 20px 38px);
+      clip-path: polygon(0 15%, 100% 0, 100% 100%, 92% 100%, 92% 26%, 10% 40%, 10% 100%, 0 100%);
+    }
+
+    .hamad-port .shape::after {
+      inset: 62% 0 16% 42%;
+      background: linear-gradient(90deg, transparent, rgba(221, 112, 65, .36), transparent);
+      border-top: 2px solid rgba(229, 132, 83, .36);
+    }
+
+    .storm-corniche .visual {
+      background:
+        radial-gradient(circle at 72% 26%, rgba(230, 116, 70, .32), transparent 16%),
+        linear-gradient(180deg, #26373a 0%, #53352e 56%, #111c20 100%);
+    }
+
+    .storm-corniche .shape::before {
+      inset: 15% -4% 36% 42%;
+      background:
+        linear-gradient(170deg, transparent 0 34%, rgba(238, 132, 79, .7) 34% 37%, transparent 37%),
+        linear-gradient(15deg, rgba(255, 224, 167, .08), rgba(34, 45, 45, .74));
+      clip-path: polygon(0 0, 100% 12%, 100% 100%, 12% 78%);
+    }
+
+    .storm-corniche .shape::after {
+      inset: 44% 5% 20% 49%;
+      background: repeating-linear-gradient(90deg, transparent 0 34px, rgba(230, 116, 70, .44) 34px 37px);
+      transform: skewY(-5deg);
+    }
+
+    @media (max-width: 1050px) {
+      .intro,
+      .options {
+        grid-template-columns: 1fr;
+      }
+
+      .spec {
+        justify-self: stretch;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        width: min(100% - 20px, 1240px);
+        padding-top: 22px;
+      }
+
+      .group-head {
+        grid-template-columns: 1fr;
+        gap: 5px;
+      }
+
+      .group-head i {
+        display: none;
+      }
+
+      .option-title {
+        display: grid;
+        gap: 4px;
+      }
+
+      .option-title span {
+        white-space: normal;
+      }
+
+      .hero {
+        min-height: 220px;
+        padding: 12px;
+      }
+
+      .content {
+        padding: 10px;
+      }
+
+      .content p {
+        max-width: 29ch;
+        font-size: 11px;
+      }
+
+      .chip {
+        min-height: 20px;
+        padding: 5px 7px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <h1 id="page-title">Doha Light Register</h1>
+        <p>Fifteen hero-background candidates for the five mood-score scenarios. Each option keeps the current 680 x 220 brief format and uses Doha as the visual anchor.</p>
+      </div>
+      <div class="spec" aria-label="Design constraints">
+        <span>5 mood levels</span>
+        <span>3 options each</span>
+        <span>Doha-inspired system</span>
+      </div>
+    </section>
+
+    <section class="mood-group m1" aria-labelledby="m1-title">
+      <div class="group-head"><strong id="m1-title">Mood 1 - Very Positive</strong><i></i><span>bright morning, green-gold lift, open horizon</span></div>
+      <div class="options">
+        <article class="option">
+          <div class="option-title"><strong>1A Lusail Sunrise</strong><span>skyline glow</span></div>
+          <div class="frame m1a">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero lusail-sunrise grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 1/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Lusail towers catching the first clear gold of the morning.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">Most polished and recognizably urban. Good default for peak-positive days.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>1B MIA Park Palms</strong><span>green morning</span></div>
+          <div class="frame m1b">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero mia-palms grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 1/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Park shade, sea air, and a softer celebratory morning signal.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">Warmer and calmer than the skyline option; positive without feeling loud.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>1C Souq Lantern Morning</strong><span>warm social energy</span></div>
+          <div class="frame m1c">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero souq-lanterns grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 1/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Souq Waqif warmth translated into light, pattern, and motion.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">The most characterful positive option. Feels local and lively.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mood-group m2" aria-labelledby="m2-title">
+      <div class="group-head"><strong id="m2-title">Mood 2 - Positive Balanced</strong><i></i><span>blue coast, steady glass, calm momentum</span></div>
+      <div class="options">
+        <article class="option">
+          <div class="option-title"><strong>2A West Bay Glass</strong><span>clear balance</span></div>
+          <div class="frame m2a">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero west-bay-glass grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 2/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>West Bay glass and water tones for a composed, productive day.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">Probably the safest balanced state: professional, quiet, and very readable.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>2B Corniche Dhow</strong><span>sea rhythm</span></div>
+          <div class="frame m2b">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero corniche-dhow grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 2/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>A dhow silhouette on the Corniche: steady, useful, unhurried.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">More poetic than 2A, with a strong local cue that still stays restrained.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>2C Pearl Marina</strong><span>soft precision</span></div>
+          <div class="frame m2c">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero pearl-marina grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 2/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Marina masts, waterline, and pale morning haze around The Pearl.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">A smoother, lifestyle-leaning take on balance.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mood-group m3" aria-labelledby="m3-title">
+      <div class="group-head"><strong id="m3-title">Mood 3 - Neutral Focus</strong><i></i><span>stone, shade, cultural geometry, low noise</span></div>
+      <div class="options">
+        <article class="option">
+          <div class="option-title"><strong>3A QNL Limestone</strong><span>focused geometry</span></div>
+          <div class="frame m3a">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero qnl-limestone grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 3/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Qatar National Library-inspired planes for calm concentration.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">Best neutral-focus candidate if you want a refined, architectural feel.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>3B Msheireb Shade</strong><span>urban calm</span></div>
+          <div class="frame m3b">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero msheireb-shade grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 3/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Shaded facades, narrow light, and a deliberate task-first mood.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">More urban and practical. Good if neutral should mean work mode.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>3C MIA Stone Water</strong><span>quiet horizon</span></div>
+          <div class="frame m3c">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero mia-stone-water grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 3/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Museum stone and still water, reduced to a steady horizon.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">The quietest option. Very email-friendly and easy to read.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mood-group m4" aria-labelledby="m4-title">
+      <div class="group-head"><strong id="m4-title">Mood 4 - Cautious</strong><i></i><span>heat, haze, amber wind, controlled tension</span></div>
+      <div class="options">
+        <article class="option">
+          <div class="option-title"><strong>4A Inland Sea Dunes</strong><span>amber pressure</span></div>
+          <div class="frame m4a">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero inland-sea-dunes grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 4/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Inland Sea dunes under amber light: alert, but still composed.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">Strongest caution state: distinct from neutral without becoming alarming.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>4B Al Wakrah Haze</strong><span>harbor restraint</span></div>
+          <div class="frame m4b">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero al-wakrah-haze grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 4/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Harbor haze and muted sails for a careful, measured day.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">Gentler than the dunes. Good if caution should feel thoughtful.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>4C Desert Road</strong><span>decision corridor</span></div>
+          <div class="frame m4c">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero desert-road grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 4/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>A heat-shimmer road line: proceed carefully, keep direction.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">Most symbolic. Clear “watch your speed” energy.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mood-group m5" aria-labelledby="m5-title">
+      <div class="group-head"><strong id="m5-title">Mood 5 - Warning</strong><i></i><span>dust, port lights, dark water, high contrast</span></div>
+      <div class="options">
+        <article class="option">
+          <div class="option-title"><strong>5A Dust Skyline</strong><span>urban alert</span></div>
+          <div class="frame m5a">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero dust-skyline grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 5/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>West Bay forms behind dust light: high contrast, no panic.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">Most consistent with the full system: same city language, intensified.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>5B Hamad Port Night</strong><span>industrial alert</span></div>
+          <div class="frame m5b">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero hamad-port grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 5/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Port cranes and red working light for a decisive warning state.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">The sharpest warning option. Feels operational and serious.</p>
+        </article>
+        <article class="option">
+          <div class="option-title"><strong>5C Storm Corniche</strong><span>pressure edge</span></div>
+          <div class="frame m5c">
+            <div class="topbar">SON GUNCELLEME 06:42 QATAR</div>
+            <div class="hero storm-corniche grain"><div class="visual"></div><div class="shape"></div><div class="content"><div class="chips"><span class="chip">4 Jul 2026</span><span class="chip">Mood 5/5</span><span class="chip">Tasks 9</span></div><h2>Gunaydin, Fatih.</h2><p>Dark coast, angled pressure, and a controlled orange signal.</p></div></div>
+            <div class="palette"><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span><span class="swatch"></span></div>
+          </div>
+          <p class="notes">More atmospheric than industrial. Good if warning should feel cinematic.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

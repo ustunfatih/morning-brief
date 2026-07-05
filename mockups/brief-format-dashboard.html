@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Morning Brief Format Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@500;700;800&family=Fraunces:opsz,wght@9..144,650;9..144,800&family=Newsreader:opsz,wght@6..72,500;6..72,700&family=IBM+Plex+Sans:wght@400;500;700&family=IBM+Plex+Serif:wght@500;700&family=Libre+Franklin:wght@400;600;800&family=Literata:opsz,wght@7..72,500;7..72,700&family=Work+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f5efe3;
+      --ink: #171713;
+      --muted: #6f6758;
+      --line: #d8ccb7;
+      --panel: #fffaf0;
+      --field: #fcf7ed;
+      --blue: #2e7182;
+      --green: #2f7a55;
+      --gold: #bb7a35;
+      --red: #a33d31;
+      --slate: #293a3c;
+      --shadow: 0 18px 54px rgba(41, 34, 22, .12);
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(75, 64, 44, .05) 1px, transparent 1px) 0 0 / 42px 42px,
+        linear-gradient(180deg, rgba(75, 64, 44, .04) 1px, transparent 1px) 0 0 / 42px 42px,
+        radial-gradient(circle at 82% 0%, rgba(187, 122, 53, .15), transparent 34%),
+        var(--paper);
+      font-family: "Newsreader", Georgia, serif;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .page {
+      width: min(1280px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 60px;
+    }
+
+    .intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 820px;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(40px, 7vw, 82px);
+      line-height: .88;
+      letter-spacing: 0;
+    }
+
+    .intro p {
+      max-width: 760px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.36;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      max-width: 340px;
+    }
+
+    .btn {
+      min-height: 34px;
+      border: 1px solid #bfb19a;
+      border-radius: 8px;
+      padding: 8px 11px;
+      color: #2b261d;
+      background: #fff8e9;
+      cursor: pointer;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .btn.primary {
+      color: #fffaf0;
+      border-color: #203b3f;
+      background: #203b3f;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .main,
+    .side {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 250, 240, .88);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(225, 214, 192, .52);
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      text-transform: uppercase;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .panel-head span {
+      color: #837760;
+      font-size: 11px;
+      line-height: 1.2;
+      text-align: right;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      color: #4e4638;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #cabda5;
+      border-radius: 8px;
+      padding: 9px 10px;
+      color: var(--ink);
+      background: var(--field);
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 138px;
+      resize: vertical;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .holdings {
+      display: grid;
+      gap: 8px;
+    }
+
+    .holding-row {
+      display: grid;
+      grid-template-columns: 92px minmax(110px, 1fr) 82px 34px;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #c5b79e;
+      border-radius: 8px;
+      color: #4a3e2c;
+      background: #fff6e6;
+      cursor: pointer;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .font-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .font-card {
+      display: grid;
+      gap: 8px;
+      border: 1px solid #d1c4ad;
+      border-radius: 8px;
+      padding: 11px;
+      background: #fff7e8;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .font-card[aria-pressed="true"] {
+      border-color: #203b3f;
+      box-shadow: inset 0 0 0 2px #203b3f;
+    }
+
+    .font-card strong {
+      color: #2d271f;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .font-card span {
+      color: #756b58;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 38px;
+      border: 1px solid #d1c4ad;
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #fff7e8;
+      color: #3f382d;
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      font-size: 14px;
+      text-transform: none;
+    }
+
+    .check input {
+      width: 16px;
+      height: 16px;
+      padding: 0;
+    }
+
+    .preview {
+      display: grid;
+      gap: 0;
+      overflow: hidden;
+      border: 1px solid #cbbfa8;
+      border-radius: 8px;
+      background: #f6f6f7;
+    }
+
+    .preview-top {
+      padding: 7px 12px;
+      text-align: right;
+      color: #5a6170;
+      background: #d0d3dc;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .preview-hero {
+      min-height: 118px;
+      padding: 16px;
+      display: flex;
+      align-items: end;
+      color: #fff;
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, .55), rgba(0, 0, 0, .1) 62%),
+        url("../assets/headers/mood-2-1.png") center / cover;
+    }
+
+    .preview-chip {
+      display: inline-block;
+      margin-bottom: 7px;
+      border: 1px solid rgba(255, 255, 255, .55);
+      border-radius: 7px;
+      padding: 5px 7px;
+      background: rgba(14, 17, 18, .7);
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .preview h3 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .preview-content {
+      padding: 14px;
+      background: #fff;
+    }
+
+    .preview-card {
+      border: 1px solid #d0d3dc;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-bottom: 8px;
+      border: 1px solid #cde4f4;
+      border-radius: 8px;
+      padding: 3px 8px;
+      color: #2b7cab;
+      background: #eaf3fa;
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .preview-card p {
+      margin: 0;
+      color: #1f2933;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .small-list {
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 7px;
+      color: #4b5563;
+      font-size: 13px;
+    }
+
+    .small-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid #e2e0d9;
+      padding-top: 7px;
+    }
+
+    .output {
+      display: grid;
+      gap: 10px;
+    }
+
+    .output-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .status {
+      min-height: 18px;
+      color: var(--green);
+      font-family: "Azeret Mono", ui-monospace, monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 1040px) {
+      .intro,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        justify-content: flex-start;
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .page {
+        width: min(100% - 20px, 1280px);
+        padding-top: 22px;
+      }
+
+      .grid-2,
+      .grid-3,
+      .font-options,
+      .checks {
+        grid-template-columns: 1fr;
+      }
+
+      .holding-row {
+        grid-template-columns: 1fr 1fr 72px 34px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <h1 id="page-title">Brief Format Dashboard</h1>
+        <p>Customize the morning brief structure, holdings, typography, sections, and practical run settings. When opened through the local helper server, Save writes directly to brief-settings.json.</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="saveBtn" type="button">Save to Brief</button>
+        <button class="btn" id="publishBtn" type="button">Publish</button>
+        <button class="btn" id="resetBtn" type="button">Reset</button>
+        <button class="btn" id="downloadBtn" type="button">Download Config</button>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="main">
+        <section class="panel" aria-labelledby="holdings-title">
+          <div class="panel-head">
+            <h2 id="holdings-title">Holdings</h2>
+            <span>Used for fallback finance tickers</span>
+          </div>
+          <div class="panel-body">
+            <div class="holdings" id="holdingsList"></div>
+            <div style="margin-top:12px;">
+              <button class="btn" id="addHoldingBtn" type="button">Add Holding</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="font-title">
+          <div class="panel-head">
+            <h2 id="font-title">Font Pairing</h2>
+            <span>At least five safe alternatives</span>
+          </div>
+          <div class="panel-body">
+            <div class="font-options" id="fontOptions"></div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="sections-title">
+          <div class="panel-head">
+            <h2 id="sections-title">Sections</h2>
+            <span>What the brief should include</span>
+          </div>
+          <div class="panel-body">
+            <div class="checks" id="sectionChecks"></div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="data-title">
+          <div class="panel-head">
+            <h2 id="data-title">Data Sources</h2>
+            <span>Practical repo settings</span>
+          </div>
+          <div class="panel-body">
+            <div class="grid-2">
+              <label>Timezone
+                <input data-field="timezone" value="Asia/Qatar">
+              </label>
+              <label>Weather Location
+                <input data-field="weatherLocation" value="Doha, Qatar">
+              </label>
+              <label>Todoist Filter
+                <input data-field="todoistFilter" value="overdue | today">
+              </label>
+              <label>Max Todoist Items
+                <input data-field="todoistMaxItems" type="number" min="1" max="20" value="10">
+              </label>
+              <label>Google Sheet Name
+                <input data-field="sheetName" value="Dashboard v2">
+              </label>
+              <label>Sheet Header Row
+                <input data-field="sheetHeaderRow" type="number" min="1" max="100" value="6">
+              </label>
+              <label>Ticker Column
+                <input data-field="tickerColumn" value="Ticker">
+              </label>
+              <label>Holdings Column
+                <input data-field="holdingsColumn" value="Shares">
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="format-title">
+          <div class="panel-head">
+            <h2 id="format-title">Format Settings</h2>
+            <span>Useful controls to keep nearby</span>
+          </div>
+          <div class="panel-body">
+            <div class="grid-3">
+              <label>Email Width
+                <select data-field="emailWidth">
+                  <option value="680">680 px</option>
+                  <option value="720">720 px</option>
+                  <option value="640">640 px</option>
+                </select>
+              </label>
+              <label>Reading Density
+                <select data-field="density">
+                  <option value="compact">Compact</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="spacious">Spacious</option>
+                </select>
+              </label>
+              <label>Brief Tone
+                <select data-field="tone">
+                  <option value="short-clear">Short and clear</option>
+                  <option value="executive">Executive</option>
+                  <option value="reflective">Reflective</option>
+                  <option value="analytical">Analytical</option>
+                </select>
+              </label>
+              <label>Header System
+                <select data-field="headerSystem">
+                  <option value="doha-light-register">Doha Light Register</option>
+                  <option value="abstract-pool">Abstract pool</option>
+                  <option value="no-image">No image</option>
+                </select>
+              </label>
+              <label>HTML Budget
+                <input data-field="htmlBudgetBytes" type="number" min="16384" max="500000" value="102400">
+              </label>
+              <label>Gemini Model
+                <input data-field="geminiModel" value="gemini-2.5-flash">
+              </label>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side">
+        <section class="panel" aria-labelledby="preview-title">
+          <div class="panel-head">
+            <h2 id="preview-title">Live Preview</h2>
+            <span>Typography and header feel</span>
+          </div>
+          <div class="panel-body">
+            <div class="preview" id="preview">
+              <div class="preview-top">SON GUNCELLEME: 06:42 QATAR</div>
+              <div class="preview-hero">
+                <div>
+                  <span class="preview-chip">Mood 2/5</span>
+                  <h3>Gunaydin, Fatih.</h3>
+                </div>
+              </div>
+              <div class="preview-content">
+                <div class="preview-card">
+                  <span class="tag">Odak</span>
+                  <p>Planli hareket, net oncelik, sakin tempo. Bugun brief hizli taranabilir ve karar vermeye yardimci kalir.</p>
+                  <ul class="small-list" id="previewHoldings"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="export-title">
+          <div class="panel-head">
+            <h2 id="export-title">Generated Config</h2>
+            <span>JSON and env output</span>
+          </div>
+          <div class="panel-body output">
+            <label>Settings JSON
+              <textarea id="jsonOutput" readonly></textarea>
+            </label>
+            <label>Environment Variables
+              <textarea id="envOutput" readonly></textarea>
+            </label>
+            <div class="output-actions">
+              <button class="btn" id="copyJsonBtn" type="button">Copy Config</button>
+              <button class="btn" id="copyEnvBtn" type="button">Copy Env</button>
+            </div>
+            <div class="status" id="status" role="status"></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const storageKey = "morningBriefFormatSettings.v1";
+    const apiBase = window.location.protocol === "http:" ? window.location.origin : "http://127.0.0.1:8766";
+
+    const fontPairings = [
+      {
+        id: "system-editorial",
+        name: "System Editorial",
+        tone: "Email safest",
+        heading: "Georgia, 'Times New Roman', serif",
+        body: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+        mono: "'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace",
+        previewHeading: "Georgia",
+        previewBody: "Segoe UI",
+      },
+      {
+        id: "newspaper-modern",
+        name: "Newspaper Modern",
+        tone: "Warm and literate",
+        heading: "'Newsreader', Georgia, serif",
+        body: "'IBM Plex Sans', 'Segoe UI', Arial, sans-serif",
+        mono: "'Azeret Mono', 'SFMono-Regular', Menlo, monospace",
+        previewHeading: "Newsreader",
+        previewBody: "IBM Plex Sans",
+      },
+      {
+        id: "sharp-briefing",
+        name: "Sharp Briefing",
+        tone: "Executive",
+        heading: "'Fraunces', Georgia, serif",
+        body: "'Libre Franklin', 'Segoe UI', Arial, sans-serif",
+        mono: "'Azeret Mono', 'SFMono-Regular', Menlo, monospace",
+        previewHeading: "Fraunces",
+        previewBody: "Libre Franklin",
+      },
+      {
+        id: "humanist-calm",
+        name: "Humanist Calm",
+        tone: "Soft focus",
+        heading: "'Literata', Georgia, serif",
+        body: "'Work Sans', 'Segoe UI', Arial, sans-serif",
+        mono: "'Azeret Mono', Menlo, monospace",
+        previewHeading: "Literata",
+        previewBody: "Work Sans",
+      },
+      {
+        id: "market-terminal",
+        name: "Market Terminal",
+        tone: "Finance forward",
+        heading: "'IBM Plex Serif', Georgia, serif",
+        body: "'IBM Plex Sans', 'Segoe UI', Arial, sans-serif",
+        mono: "'Azeret Mono', 'SFMono-Regular', Menlo, monospace",
+        previewHeading: "IBM Plex Serif",
+        previewBody: "IBM Plex Sans",
+      },
+      {
+        id: "classic-mail",
+        name: "Classic Mail",
+        tone: "Maximum compatibility",
+        heading: "Verdana, Geneva, sans-serif",
+        body: "Verdana, Geneva, sans-serif",
+        mono: "Consolas, Menlo, monospace",
+        previewHeading: "Verdana",
+        previewBody: "Verdana",
+      },
+    ];
+
+    const sectionLabels = [
+      ["odak", "Focus"],
+      ["hava", "Weather"],
+      ["astro", "Astrology"],
+      ["karar", "Decision"],
+      ["is", "Work"],
+      ["todoist", "Todoist"],
+      ["finans", "Finance"],
+      ["soru", "One Question"],
+    ];
+
+    const defaults = {
+      holdings: [
+        { ticker: "SCHD", name: "Schwab US Dividend Equity ETF", shares: "1", include: true },
+        { ticker: "QQQI", name: "Nasdaq-100 Income ETF", shares: "1", include: true },
+        { ticker: "AIS", name: "Airship AI Holdings", shares: "1", include: true },
+        { ticker: "SCHG", name: "Schwab US Large-Cap Growth ETF", shares: "1", include: true },
+        { ticker: "ROKT", name: "SPDR Kensho Final Frontiers ETF", shares: "1", include: true },
+        { ticker: "ARKX", name: "ARK Space Exploration ETF", shares: "1", include: true },
+      ],
+      fontPairingId: "system-editorial",
+      sections: Object.fromEntries(sectionLabels.map(([key]) => [key, true])),
+      data: {
+        timezone: "Asia/Qatar",
+        weatherLocation: "Doha, Qatar",
+        todoistFilter: "overdue | today",
+        todoistMaxItems: "10",
+        sheetName: "Dashboard v2",
+        sheetHeaderRow: "6",
+        tickerColumn: "Ticker",
+        holdingsColumn: "Shares",
+      },
+      format: {
+        emailWidth: "680",
+        density: "compact",
+        tone: "short-clear",
+        headerSystem: "doha-light-register",
+        htmlBudgetBytes: "102400",
+        geminiModel: "gemini-2.5-flash",
+      },
+    };
+
+    let state = loadState();
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+        return mergeSettings(defaults, saved || {});
+      } catch {
+        return structuredClone(defaults);
+      }
+    }
+
+    async function loadServerSettings() {
+      try {
+        const response = await fetch(`${apiBase}/api/settings`, { cache: "no-store" });
+        if (!response.ok) return;
+        const settings = await response.json();
+        if (settings && Object.keys(settings).length) {
+          state = mergeSettings(defaults, settings);
+          localStorage.setItem(storageKey, JSON.stringify(state));
+          renderAll();
+          flash("Loaded brief-settings.json");
+        }
+      } catch {
+        flash("Local helper not running");
+      }
+    }
+
+    function mergeSettings(base, incoming) {
+      return {
+        ...structuredClone(base),
+        ...incoming,
+        data: { ...base.data, ...(incoming.data || {}) },
+        format: { ...base.format, ...(incoming.format || {}) },
+        sections: { ...base.sections, ...(incoming.sections || {}) },
+        holdings: Array.isArray(incoming.holdings) ? incoming.holdings : structuredClone(base.holdings),
+      };
+    }
+
+    function selectedFont() {
+      return fontPairings.find((font) => font.id === state.fontPairingId) || fontPairings[0];
+    }
+
+    function renderHoldings() {
+      const list = document.getElementById("holdingsList");
+      list.innerHTML = "";
+      state.holdings.forEach((holding, index) => {
+        const row = document.createElement("div");
+        row.className = "holding-row";
+        row.innerHTML = `
+          <label>Ticker<input value="${escapeAttr(holding.ticker)}" data-holding="${index}" data-key="ticker"></label>
+          <label>Name<input value="${escapeAttr(holding.name)}" data-holding="${index}" data-key="name"></label>
+          <label>Shares<input value="${escapeAttr(holding.shares)}" data-holding="${index}" data-key="shares"></label>
+          <button class="icon-btn" type="button" aria-label="Remove holding" data-remove="${index}">x</button>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function renderFonts() {
+      const wrap = document.getElementById("fontOptions");
+      wrap.innerHTML = "";
+      fontPairings.forEach((font) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "font-card";
+        button.setAttribute("aria-pressed", String(font.id === state.fontPairingId));
+        button.dataset.font = font.id;
+        button.innerHTML = `
+          <strong style="font-family:${font.heading}">${font.name}</strong>
+          <span>${font.previewHeading} + ${font.previewBody} / ${font.tone}</span>
+        `;
+        wrap.appendChild(button);
+      });
+    }
+
+    function renderSections() {
+      const wrap = document.getElementById("sectionChecks");
+      wrap.innerHTML = "";
+      sectionLabels.forEach(([key, label]) => {
+        const item = document.createElement("label");
+        item.className = "check";
+        item.innerHTML = `<input type="checkbox" data-section="${key}" ${state.sections[key] ? "checked" : ""}> ${label}`;
+        wrap.appendChild(item);
+      });
+    }
+
+    function syncInputs() {
+      document.querySelectorAll("[data-field]").forEach((input) => {
+        const key = input.dataset.field;
+        const source = key in state.data ? state.data : state.format;
+        input.value = source[key] || "";
+      });
+    }
+
+    function updatePreview() {
+      const font = selectedFont();
+      const preview = document.getElementById("preview");
+      preview.style.setProperty("--heading-font", font.heading);
+      preview.style.fontFamily = font.body;
+      preview.querySelector("h3").style.fontFamily = font.heading;
+      preview.querySelectorAll(".preview-chip, .tag").forEach((el) => {
+        el.style.fontFamily = font.mono;
+      });
+
+      const holdings = state.holdings
+        .filter((item) => item.ticker && item.include !== false)
+        .slice(0, 5);
+      document.getElementById("previewHoldings").innerHTML = holdings
+        .map((item) => `<li><span>${escapeHtml(item.ticker.toUpperCase())}</span><strong>${escapeHtml(item.shares || "1")}</strong></li>`)
+        .join("");
+    }
+
+    function buildConfig() {
+      const font = selectedFont();
+      const includedTickers = state.holdings
+        .map((item) => ({ ...item, ticker: String(item.ticker || "").trim().toUpperCase() }))
+        .filter((item) => item.ticker && item.include !== false);
+
+      return {
+        holdings: includedTickers,
+        fontPairing: {
+          id: font.id,
+          name: font.name,
+          heading: font.heading,
+          body: font.body,
+          mono: font.mono,
+        },
+        sections: state.sections,
+        data: state.data,
+        format: state.format,
+      };
+    }
+
+    function buildEnv(config) {
+      const tickers = config.holdings.map((item) => item.ticker).join(",");
+      return [
+        `PORTFOLIO_FALLBACK_TICKERS="${tickers}"`,
+        `BRIEF_FONT_STACK="${config.fontPairing.body.replaceAll('"', '\\"')}"`,
+        `BRIEF_MONO_FONT_STACK="${config.fontPairing.mono.replaceAll('"', '\\"')}"`,
+        `GEMINI_MODEL="${state.format.geminiModel}"`,
+        `TODOIST_FILTER="${state.data.todoistFilter}"`,
+        `TODOIST_MAX_ITEMS="${state.data.todoistMaxItems}"`,
+        `GSHEETS_SHEET_NAME="${state.data.sheetName}"`,
+        `GSHEETS_HEADER_ROW="${state.data.sheetHeaderRow}"`,
+        `GSHEETS_TICKER_COLUMN="${state.data.tickerColumn}"`,
+        `GSHEETS_HOLDINGS_COLUMN="${state.data.holdingsColumn}"`,
+        `EMAIL_HTML_BUDGET_BYTES="${state.format.htmlBudgetBytes}"`,
+        `HEADER_POOL_SIZE="5"`,
+      ].join("\n");
+    }
+
+    function updateOutputs() {
+      const config = buildConfig();
+      document.getElementById("jsonOutput").value = JSON.stringify(config, null, 2);
+      document.getElementById("envOutput").value = buildEnv(config);
+    }
+
+    function renderAll() {
+      renderHoldings();
+      renderFonts();
+      renderSections();
+      syncInputs();
+      updatePreview();
+      updateOutputs();
+    }
+
+    function save() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      return saveToBriefSettings();
+    }
+
+    async function saveToBriefSettings() {
+      try {
+        const response = await fetch(`${apiBase}/api/settings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ settings: buildConfig() }),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) throw new Error(result.error || "Save failed");
+        flash("Saved to brief-settings.json");
+      } catch {
+        flash("Saved locally only; start scripts/settings_server.py for repo save");
+      }
+    }
+
+    async function publishSettings() {
+      try {
+        const response = await fetch(`${apiBase}/api/publish`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            settings: buildConfig(),
+            message: "Update morning brief settings",
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) throw new Error(result.error || "Publish failed");
+        flash(result.pushed ? "Committed and pushed" : result.message || "Nothing to publish");
+      } catch (error) {
+        flash(error.message || "Publish failed");
+      }
+    }
+
+    function flash(message) {
+      const status = document.getElementById("status");
+      status.textContent = message;
+      window.clearTimeout(flash.timer);
+      flash.timer = window.setTimeout(() => {
+        status.textContent = "";
+      }, 1800);
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      }[char]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replaceAll("\n", " ");
+    }
+
+    document.addEventListener("input", (event) => {
+      const target = event.target;
+      if (target.matches("[data-holding]")) {
+        const index = Number(target.dataset.holding);
+        state.holdings[index][target.dataset.key] = target.value;
+      }
+      if (target.matches("[data-field]")) {
+        const key = target.dataset.field;
+        if (key in state.data) state.data[key] = target.value;
+        if (key in state.format) state.format[key] = target.value;
+      }
+      if (target.matches("[data-section]")) {
+        state.sections[target.dataset.section] = target.checked;
+      }
+      updatePreview();
+      updateOutputs();
+    });
+
+    document.addEventListener("click", async (event) => {
+      const target = event.target.closest("button");
+      if (!target) return;
+
+      if (target.dataset.remove) {
+        state.holdings.splice(Number(target.dataset.remove), 1);
+        renderAll();
+      }
+
+      if (target.dataset.font) {
+        state.fontPairingId = target.dataset.font;
+        renderAll();
+      }
+
+      if (target.id === "addHoldingBtn") {
+        state.holdings.push({ ticker: "", name: "", shares: "1", include: true });
+        renderAll();
+      }
+
+      if (target.id === "saveBtn") save();
+
+      if (target.id === "publishBtn") publishSettings();
+
+      if (target.id === "resetBtn") {
+        state = structuredClone(defaults);
+        localStorage.removeItem(storageKey);
+        renderAll();
+        flash("Reset to defaults");
+      }
+
+      if (target.id === "downloadBtn") {
+        const blob = new Blob([JSON.stringify(buildConfig(), null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "brief-settings.json";
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      if (target.id === "copyJsonBtn") {
+        await navigator.clipboard.writeText(document.getElementById("jsonOutput").value);
+        flash("JSON copied");
+      }
+
+      if (target.id === "copyEnvBtn") {
+        await navigator.clipboard.writeText(document.getElementById("envOutput").value);
+        flash("Env copied");
+      }
+    });
+
+    renderAll();
+    loadServerSettings();
+  </script>
+</body>
+</html>

@@ -46,6 +46,60 @@ def _env_csv(name, default_values):
     values = [item.strip() for item in str(raw_value).split(",")]
     return [item for item in values if item]
 
+
+def _load_brief_settings():
+    path = _env_str("BRIEF_SETTINGS_FILE", "brief-settings.json")
+    if not path or not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            print(f"✅ Brief settings loaded: {path}")
+            return data
+    except Exception as err:
+        print(f"⚠️ Brief settings could not be loaded ({path}): {err}")
+    return {}
+
+
+def _brief_setting(path, default=None):
+    cursor = BRIEF_SETTINGS
+    for key in path:
+        if not isinstance(cursor, dict) or key not in cursor:
+            return default
+        cursor = cursor[key]
+    return cursor
+
+
+def _brief_settings_tickers(default_values):
+    raw_env = os.environ.get("PORTFOLIO_FALLBACK_TICKERS")
+    if raw_env is not None:
+        return _env_csv("PORTFOLIO_FALLBACK_TICKERS", default_values)
+
+    tickers = []
+    holdings = _brief_setting(["holdings"], [])
+    if isinstance(holdings, list):
+        for item in holdings:
+            if isinstance(item, dict) and item.get("include") is False:
+                continue
+            raw_ticker = item.get("ticker") if isinstance(item, dict) else item
+            ticker = str(raw_ticker or "").strip().upper()
+            if ":" in ticker:
+                ticker = ticker.split(":", 1)[1].strip()
+            ticker = ticker.replace(" ", "")
+            if re.fullmatch(r"[A-Z0-9.\-]{1,12}", ticker) and ticker not in tickers:
+                tickers.append(ticker)
+    return tickers or list(default_values)
+
+
+def _brief_enabled_sections():
+    known = ["odak", "hava", "astro", "karar", "is", "todoist", "finans"]
+    configured = _brief_setting(["sections"], {})
+    if not isinstance(configured, dict):
+        return known
+    enabled = [section_id for section_id in known if configured.get(section_id, True)]
+    return enabled or known
+
 def _strip_wrapping_quotes(value):
     if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
         return value[1:-1].strip()
@@ -102,16 +156,31 @@ class TodoistAPIError(RuntimeError):
         super().__init__(f"Todoist[{phase}] {path} status={status}: {details}")
 
 # --- CONFIGURATION ---
+BRIEF_SETTINGS = _load_brief_settings()
 API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or _brief_setting(["format", "geminiModel"], "gemini-2.5-flash")
 GEMINI_FALLBACK_MODELS = _env_csv("GEMINI_FALLBACK_MODELS", ["gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"])
 GEMINI_MAX_RETRIES = _env_int("GEMINI_MAX_RETRIES", 4, minimum=1, maximum=8)
 GEMINI_RETRY_BASE_SEC = max(0.5, float(os.environ.get("GEMINI_RETRY_BASE_SEC") or 3.0))
 EMAIL_RENDER_MODE = os.environ.get("EMAIL_RENDER_MODE") or "email-safe"
 THEME_PROFILE = os.environ.get("THEME_PROFILE") or "offwhite-slate"
-EMAIL_HTML_BUDGET_BYTES = _env_int("EMAIL_HTML_BUDGET_BYTES", 102400, minimum=16384, maximum=500000)
+EMAIL_HTML_BUDGET_BYTES = _env_int(
+    "EMAIL_HTML_BUDGET_BYTES",
+    _safe_int(_brief_setting(["format", "htmlBudgetBytes"], 102400), 102400),
+    minimum=16384,
+    maximum=500000,
+)
+BRIEF_FONT_STACK = _env_str(
+    "BRIEF_FONT_STACK",
+    _brief_setting(["fontPairing", "body"], '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif'),
+)
+BRIEF_MONO_FONT_STACK = _env_str(
+    "BRIEF_MONO_FONT_STACK",
+    _brief_setting(["fontPairing", "mono"], '"SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace'),
+)
+BRIEF_ENABLED_SECTIONS = _brief_enabled_sections()
 GEMINI_IMAGE_MODEL = os.environ.get("GEMINI_IMAGE_MODEL") or "gemini-2.5-flash-image"
-TIMEZONE = "Asia/Qatar"
+TIMEZONE = _env_str("BRIEF_TIMEZONE", _brief_setting(["data", "timezone"], "Asia/Qatar"))
 USER_BIRTH_DATA = _env_str("USER_BIRTH_DATA", "kişisel profil yapılandırıldı")
 CACHE_DIR = ".cache"
 HEADER_IMAGE_DIR = os.path.join("assets", "headers")
@@ -121,8 +190,19 @@ HEADER_TARGET_HEIGHT = _env_int("HEADER_TARGET_HEIGHT", 440, minimum=220, maximu
 FALLBACK_HERO_BG = "#374151"
 TODOIST_DEFAULT_FILTER = "overdue | today"
 TODOIST_API_TOKEN = _normalize_todoist_token(_env_str("TODOIST_API_TOKEN", ""))
-TODOIST_FILTER = _normalize_todoist_filter(_env_str("TODOIST_FILTER", TODOIST_DEFAULT_FILTER), TODOIST_DEFAULT_FILTER)
-TODOIST_MAX_ITEMS = max(10, _env_int("TODOIST_MAX_ITEMS", 10, minimum=1, maximum=20))
+TODOIST_FILTER = _normalize_todoist_filter(
+    _env_str("TODOIST_FILTER", _brief_setting(["data", "todoistFilter"], TODOIST_DEFAULT_FILTER)),
+    TODOIST_DEFAULT_FILTER,
+)
+TODOIST_MAX_ITEMS = max(
+    10,
+    _env_int(
+        "TODOIST_MAX_ITEMS",
+        _safe_int(_brief_setting(["data", "todoistMaxItems"], 10), 10),
+        minimum=1,
+        maximum=20,
+    ),
+)
 TODOIST_CACHE_TTL_MIN = _env_int("TODOIST_CACHE_TTL_MIN", 10, minimum=1, maximum=180)
 TODOIST_API_BASE = "https://api.todoist.com/api/v1"
 
@@ -182,7 +262,7 @@ HTML_TEMPLATE = Template("""
     <title>Sabah Özeti | Fatih</title>
     <style>
       body, table, td, p, a, span, div {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        font-family: $brief_font_stack;
         line-height: 1.45;
       }
       img {
@@ -322,13 +402,7 @@ HTML_TEMPLATE = Template("""
             <tr>
               <td style="padding:10px 18px 8px 18px;">
                 <p style="margin:0; font-size:12px; color:#4B5563; line-height:1.5;">
-                  <a href="#odak" style="color:#2B7CAB; text-decoration:none;">🎯 Odak</a> ·
-                  <a href="#hava" style="color:#2B7CAB; text-decoration:none;">🌤️ Hava</a> ·
-                  <a href="#astro" style="color:#2B7CAB; text-decoration:none;">✨ Astro</a> ·
-                  <a href="#karar" style="color:#2B7CAB; text-decoration:none;">🧭 Karar</a> ·
-                  <a href="#is" style="color:#2B7CAB; text-decoration:none;">💼 İş</a> ·
-                  <a href="#todoist" style="color:#2B7CAB; text-decoration:none;">✅ Görevler</a> ·
-                  <a href="#finans" style="color:#2B7CAB; text-decoration:none;">📈 Finans</a>
+                  $nav_links
                 </p>
               </td>
             </tr>
@@ -378,10 +452,12 @@ def _validate_html_template_placeholders():
         "date_string",
         "content_body",
         "hero_image_markup",
-        "weather_time",
-        "todoist_time",
-        "finance_time",
+    "weather_time",
+    "todoist_time",
+    "finance_time",
         "market_status",
+        "brief_font_stack",
+        "nav_links",
     }
     template_str = HTML_TEMPLATE.template
     # Guard against JS template literals that can hide ${...} placeholders.
@@ -519,7 +595,7 @@ EMAIL_CLASS_STYLES = {
     "d-good": "color:#26B46D;",
     "d-bad": "color:#EE763A;",
     "d-neutral": "color:#4B5563;",
-    "ticker-pill": "display:inline-block;background-color:#FDEDE5;border:1px solid #F7CBB5;border-radius:4px;padding:2px 8px;color:#C85826;font-family:\"SFMono-Regular\",Menlo,Consolas,\"Liberation Mono\",monospace;font-size:13px;",
+    "ticker-pill": f"display:inline-block;background-color:#FDEDE5;border:1px solid #F7CBB5;border-radius:4px;padding:2px 8px;color:#C85826;font-family:{BRIEF_MONO_FONT_STACK};font-size:13px;",
     "bullet-list": "margin:0;padding-left:18px;",
     "finance-list": "list-style:none;padding:0;margin:0;",
     "source-link": "color:#2B7CAB;text-decoration:underline;",
@@ -647,7 +723,7 @@ def _escape_template_like_sequences(text):
     return text.replace("${", "&#36;{")
 
 def _ensure_required_sections(raw_html):
-    required_ids = ["odak", "hava", "astro", "karar", "is", "todoist", "finans"]
+    required_ids = BRIEF_ENABLED_SECTIONS
     missing = [sec for sec in required_ids if f'id="{sec}"' not in raw_html]
     if not missing:
         return raw_html
@@ -682,6 +758,32 @@ def _replace_section_by_id(raw_html, section_id, replacement_html):
         scan_pos = token.end()
 
     return raw_html[:match.start()] + replacement_html + raw_html[scan_pos:]
+
+
+def _filter_enabled_sections(raw_html):
+    known_ids = ["odak", "hava", "astro", "karar", "is", "todoist", "finans"]
+    for section_id in known_ids:
+        if section_id not in BRIEF_ENABLED_SECTIONS:
+            raw_html = _replace_section_by_id(raw_html, section_id, "")
+    return raw_html
+
+
+def _build_nav_links():
+    labels = {
+        "odak": "🎯 Odak",
+        "hava": "🌤️ Hava",
+        "astro": "✨ Astro",
+        "karar": "🧭 Karar",
+        "is": "💼 İş",
+        "todoist": "✅ Görevler",
+        "finans": "📈 Finans",
+    }
+    links = [
+        f'<a href="#{section_id}" style="color:#2B7CAB; text-decoration:none;">{labels[section_id]}</a>'
+        for section_id in BRIEF_ENABLED_SECTIONS
+        if section_id in labels
+    ]
+    return " · ".join(links)
 
 
 def _todoist_rows_html(items):
@@ -1430,7 +1532,7 @@ Saatlik detay:
         return "(Hava durumu verisi alınamadı.)", "partly-cloudy", datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
-_ETF_FALLBACK_WHITELIST = ["SCHD", "QQQI", "AIS", "SCHG", "ROKT", "ARKX"]
+_ETF_FALLBACK_WHITELIST = _brief_settings_tickers(["SCHD", "QQQI", "AIS", "SCHG", "ROKT", "ARKX"])
 _resolved_etf_tickers: list[str] = []  # populated by get_financial_data()
 _portfolio_display_tickers: dict[str, str] = {}
 
@@ -1518,10 +1620,15 @@ def _get_portfolio_tickers_from_sheets():
     if not spreadsheet_id or not sa_json_b64:
         return None  # Integration not configured
 
-    sheet_name = _env_str("GSHEETS_SHEET_NAME", "Dashboard v2")
-    header_row_num = _env_int("GSHEETS_HEADER_ROW", 6, minimum=1, maximum=100)
-    ticker_col = _env_str("GSHEETS_TICKER_COLUMN", "Ticker")
-    holdings_col = _env_str("GSHEETS_HOLDINGS_COLUMN", "Shares")
+    sheet_name = _env_str("GSHEETS_SHEET_NAME", _brief_setting(["data", "sheetName"], "Dashboard v2"))
+    header_row_num = _env_int(
+        "GSHEETS_HEADER_ROW",
+        _safe_int(_brief_setting(["data", "sheetHeaderRow"], 6), 6),
+        minimum=1,
+        maximum=100,
+    )
+    ticker_col = _env_str("GSHEETS_TICKER_COLUMN", _brief_setting(["data", "tickerColumn"], "Ticker"))
+    holdings_col = _env_str("GSHEETS_HOLDINGS_COLUMN", _brief_setting(["data", "holdingsColumn"], "Shares"))
     read_range = _env_str("GSHEETS_READ_RANGE", sheet_name)
 
     try:
@@ -2284,6 +2391,7 @@ def generate_daily_brief():
             date_str, weather_data, todoist_struct, financial_data,
             todoist_time_display, finance_time_display, market_status, err,
         )
+        raw_html = _filter_enabled_sections(raw_html)
         mood = MOOD_PROFILES[3].copy()
         mood["level"] = 3
         mood["score"] = 0
@@ -2298,6 +2406,8 @@ def generate_daily_brief():
             todoist_time=todoist_time_display,
             finance_time=finance_time_display,
             market_status=market_status,
+            brief_font_stack=BRIEF_FONT_STACK,
+            nav_links=_build_nav_links(),
         )
         _log_payload_size(final_html)
         with open("index.html", "w", encoding="utf-8") as f:
@@ -2312,6 +2422,7 @@ def generate_daily_brief():
     raw_html = _ensure_required_sections(raw_html)
     todoist_section_html = _build_todoist_section_html(todoist_struct, todoist_time_display)
     raw_html = _replace_section_by_id(raw_html, "todoist", todoist_section_html)
+    raw_html = _filter_enabled_sections(raw_html)
 
     mood = _score_brief_mood(raw_html)
     print(f"🧠 Özet ruh hali seviyesi: {mood['level']} ({mood['label']}) | skor={mood['score']}")
@@ -2331,7 +2442,9 @@ def generate_daily_brief():
         weather_time=weather_time_display,
         todoist_time=todoist_time_display,
         finance_time=finance_time_display,
-        market_status=market_status
+        market_status=market_status,
+        brief_font_stack=BRIEF_FONT_STACK,
+        nav_links=_build_nav_links()
     )
     _log_payload_size(final_html)
 

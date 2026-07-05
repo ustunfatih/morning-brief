@@ -4,6 +4,18 @@
 
 This project calls Gemini with an API key from environment variables.
 
+Non-secret brief preferences are read from `brief-settings.json` in the repository root. The local dashboard at `mockups/brief-format-dashboard.html` can export that file. Environment variables still override matching JSON settings in GitHub Actions.
+
+### Local settings dashboard
+
+For one-click local saves, run:
+
+```bash
+python3 scripts/settings_server.py
+```
+
+Then open the printed dashboard URL. `Save to Brief` writes `brief-settings.json` directly. `Publish` commits that settings file and pushes the current branch, so the scheduled GitHub Action can use the new settings.
+
 The app reads:
 - `GEMINI_API_KEY` (primary)
 - `GOOGLE_API_KEY` (fallback)
@@ -67,11 +79,14 @@ To keep `Piyasa Özeti` limited to actual current holdings:
 
 Copy `.env.example` to `.env` and set:
 - `GEMINI_API_KEY=...` (or `GOOGLE_API_KEY=...`)
-- `GEMINI_MODEL=gemini-2.5-flash` (optional)
+- `GEMINI_MODEL=gemini-2.5-flash` (optional, overrides `brief-settings.json`)
 - `GEMINI_IMAGE_MODEL=gemini-2.5-flash-image` (optional, hero image)
 - `HEADER_POOL_SIZE=5` (optional, mood başına üretilecek header varyasyon sayısı)
 - `HEADER_TARGET_WIDTH=1360` (optional, header normalize genişliği)
 - `HEADER_TARGET_HEIGHT=440` (optional, header normalize yüksekliği)
+- `PORTFOLIO_FALLBACK_TICKERS=SCHD,QQQI,AIS,SCHG,ROKT,ARKX` (optional, Google Sheets unavailable fallback)
+- `BRIEF_FONT_STACK="-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Arial, sans-serif"` (optional, email body font stack)
+- `BRIEF_MONO_FONT_STACK="\"SFMono-Regular\", Menlo, Consolas, \"Liberation Mono\", monospace"` (optional, ticker/mono font stack)
 - `TODOIST_API_TOKEN=...` (optional, Todoist tasks section)
 - `TODOIST_FILTER="overdue | today"` (optional)
 - `TODOIST_MAX_ITEMS=10` (optional)

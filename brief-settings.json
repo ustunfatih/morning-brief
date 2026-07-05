@@ -1,0 +1,75 @@
+{
+  "holdings": [
+    {
+      "ticker": "SCHD",
+      "name": "Schwab US Dividend Equity ETF",
+      "shares": "1",
+      "include": true
+    },
+    {
+      "ticker": "QQQI",
+      "name": "Nasdaq-100 Income ETF",
+      "shares": "1",
+      "include": true
+    },
+    {
+      "ticker": "AIS",
+      "name": "Airship AI Holdings",
+      "shares": "1",
+      "include": true
+    },
+    {
+      "ticker": "SCHG",
+      "name": "Schwab US Large-Cap Growth ETF",
+      "shares": "1",
+      "include": true
+    },
+    {
+      "ticker": "ROKT",
+      "name": "SPDR Kensho Final Frontiers ETF",
+      "shares": "1",
+      "include": true
+    },
+    {
+      "ticker": "ARKX",
+      "name": "ARK Space Exploration ETF",
+      "shares": "1",
+      "include": true
+    }
+  ],
+  "fontPairing": {
+    "id": "system-editorial",
+    "name": "System Editorial",
+    "heading": "Georgia, 'Times New Roman', serif",
+    "body": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+    "mono": "'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace"
+  },
+  "sections": {
+    "odak": true,
+    "hava": true,
+    "astro": true,
+    "karar": true,
+    "is": true,
+    "todoist": true,
+    "finans": true,
+    "soru": true
+  },
+  "data": {
+    "timezone": "Asia/Qatar",
+    "weatherLocation": "Doha, Qatar",
+    "todoistFilter": "overdue | today",
+    "todoistMaxItems": "10",
+    "sheetName": "Dashboard v2",
+    "sheetHeaderRow": "6",
+    "tickerColumn": "Ticker",
+    "holdingsColumn": "Shares"
+  },
+  "format": {
+    "emailWidth": "680",
+    "density": "compact",
+    "tone": "short-clear",
+    "headerSystem": "doha-light-register",
+    "htmlBudgetBytes": "102400",
+    "geminiModel": "gemini-2.5-flash"
+  }
+}
